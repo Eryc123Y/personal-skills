@@ -26,6 +26,11 @@ Eric's personal Claude Code skills — private collection.
 |---|---|
 | `d2-diagram` | Production-quality D2 diagrams — architecture, sequence, ER, flowcharts, and more |
 
+### Authoring
+| Skill | Purpose |
+|---|---|
+| `typst-writer` | Eric's Typst workflow: Scholia notes, Monash Touying slides, native math, and editable diagrams |
+
 ## Install via cc-switch
 
 Each top-level folder is one skill. Point cc-switch at `Eryc123Y/personal-skills`.

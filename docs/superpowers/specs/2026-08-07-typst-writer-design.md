@@ -23,6 +23,19 @@ select appropriate drawing packages, and verify rendered output.
 - Preserve CC Switch backups and avoid direct database mutation when the app's
   normal repository refresh/install workflow is available.
 
+## Remote Package Imports
+
+- Default every new document to direct Typst Universe imports such as
+  `#import "@preview/scholia:0.1.0": *` and
+  `#import "@preview/unofficial-monash-touying:0.1.2": *`.
+- Do not make generated documents import `.typ` files from the installed skill,
+  `~/.cc-switch/skills`, `.claude/skills`, or another machine-local absolute
+  path.
+- Treat bundled `.typ` assets as readable/copyable examples and compatibility
+  fallbacks, not as runtime dependencies or the default authoring path.
+- Prefer a repository-local template only when the target repository already
+  owns it or the user explicitly asks to vendor/customize a template.
+
 ## Skill Structure
 
 Keep the entrypoint concise and route detailed material through one-level
@@ -39,7 +52,7 @@ typst-writer/
 │   ├── math.md
 │   ├── diagrams.md
 │   └── packages.md
-└── assets/
+└── assets/                       # examples and compatibility only
     ├── scholia-note.typ
     ├── monash-slides.typ
     └── academic-note.typ
@@ -128,16 +141,17 @@ starter.
 
 ## Assets
 
-- `scholia-note.typ`: minimal note/workbook starter using native Scholia
-  environments and a source-editable answer area.
-- `monash-slides.typ`: minimal presentation starter using the package's public
-  Touying exports, title slide, frames, and a two-column example.
+- `scholia-note.typ`: minimal note/workbook example that imports Scholia
+  directly from Typst Universe and uses a source-editable answer area.
+- `monash-slides.typ`: minimal presentation example that imports Unofficial
+  Monash Touying directly from Typst Universe and uses its public exports.
 - `academic-note.typ`: retain and validate the existing compatibility template;
   label it legacy rather than the default for new notes.
 
 Do not vendor the Scholia or Monash package implementation into the skill. The
-assets demonstrate stable public APIs and remain small enough to copy into a
-new project.
+assets demonstrate stable public APIs and remain small enough to inspect or
+copy, but generated documents should normally reproduce their remote import
+pattern directly instead of importing the asset.
 
 ## Validation
 

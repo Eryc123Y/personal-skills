@@ -1,0 +1,4 @@
+interface:
+  display_name: "Typst Writer"
+  short_description: "Write and verify Eric’s preferred Typst documents"
+  default_prompt: "Use $typst-writer to create an idiomatic Typst document with the appropriate remote package and verify its rendering."
