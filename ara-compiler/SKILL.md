@@ -1,145 +1,61 @@
 ---
-name: compiler
-description: |
-  Universal ARA Compiler. Converts ANY research input — PDF papers, GitHub repositories,
-  experiment logs, code directories, raw notes, or combinations thereof — into a complete
-  Agent-Native Research Artifact (ARA): a structured, machine-executable knowledge package with a
-  cognitive layer (claims, concepts, methods), an artifact layer (code/configs/data as the work
-  warrants), an exploration graph (research DAG), and grounded evidence. Works across any research
-  field — not only model-training research.
-
-  TRIGGERS: compile, create ARA, generate artifact, convert paper, build artifact, compile paper,
-  ARA from PDF, ARA from repo, ARA from code, structure research, extract knowledge,
-  extract figure data, digitize plot, read chart, figure to data
-argument-hint: "[any input — paths, URLs, descriptions, or nothing]"
-allowed-tools: Read, Write, Edit, Bash(python *|git clone *|ls *|mkdir *), Glob, Grep, Task
+name: ara-compiler
+description: Compile user-supplied research papers, repositories, experiment logs, or notes into a grounded, validated Agent-Native Research Artifact (ARA). Use when the user explicitly asks to create or substantially reconstruct an ARA; do not use for ordinary summaries or to alter an existing project ledger without an explicit target.
 metadata:
   author: ara-commons
   category: research-tooling
-  version: "1.1.0"
-  tags: [research, compilation, artifacts, knowledge-extraction]
+  version: "2.0.0"
 ---
 
-# Universal ARA Compiler
+# ARA Compiler
 
-You are the ARA Universal Compiler. Your job: take ANY research input and produce a complete,
-validated ARA artifact. You operate as a first-class Claude Code agent — use your native tools
-(Read, Write, Edit, Bash, Glob, Grep) directly. No API wrapper needed.
+Create a source-bounded, reviewable ARA from material the user placed in scope.
+The artifact must distinguish source facts, derived interpretation, missing
+information, and proposed work.
 
-## Input Philosophy
+## Choose the target safely
 
-The compiler is **open-ended**. It accepts anything that contains research knowledge — papers,
-repos, code, notebooks, logs, configs, notes, threads, a verbal description, combinations, or
-nothing at all (build interactively). Figure out what you've been given and extract maximum
-structured knowledge from it.
+- For an existing repository, read its nearest `AGENTS.md` and research
+  guidance before choosing an output path.
+- Default a new compilation to a separate output directory such as
+  `./ara-output/`. Do not overwrite an established project `ara/` without an
+  explicit request naming that target.
+- If the source is incomplete, compile what is supported and mark the gap as
+  unavailable. Do not invent a claim, metric, experiment, decision, or history.
+- Resolve material conflicts only when the source authority is clear; otherwise
+  preserve the conflict and ask the user how to treat it.
 
-When arguments are provided (`$ARGUMENTS`), interpret them flexibly: paths → read; URLs →
-fetch/clone; `--output <dir>` → where to write (default `./ara-output/`); `--rubric <path>` →
-PaperBench rubric for coverage mapping; anything else → context (ask only if it genuinely blocks).
+## Evidence-first compilation
 
-### Input Reading Strategy
+1. Inventory the supplied sources and their authority: papers, appendices,
+   code, configs, datasets, logs, reports, and notes.
+2. Extract exact facts before synthesising: equations, implementation details,
+   datasets, seeds, hardware, numerical values, assumptions, negative results,
+   and ablations.
+3. Inspect visual evidence deliberately. Read every relevant table and figure;
+   for plots, diagrams, or qualitative results, render or inspect the image as
+   needed. Preserve extraction method and uncertainty. Use `≈` for estimates.
+4. Keep complete, ordered evidence records. A derived subset is not the source
+   table or figure unless it faithfully reproduces it.
+5. Reconstruct an exploration graph only from explicit decisions, results, and
+   documented alternatives. Never manufacture a plausible research history.
 
-1. **Identify what you have.** Glob, read, explore the inputs before committing to a plan.
-2. **Maximize coverage.** Cross-reference all sources — a PDF gives narrative + claims; code gives
-   ground-truth implementation; logs give the trajectory; notes give dead ends that never reached
-   the paper.
-3. **Decide, then flag.** Resolve ambiguity with your own judgment and proceed. Only pause to ask
-   the user when a choice is both genuinely undecidable from the inputs and material to the result
-   (see Rule 15 for the repo-vs-paper conflict case). Never hallucinate to fill a gap; mark it.
-4. **Handle partial inputs gracefully.** Populate what you can with high confidence; mark gaps with
-   "Not available from provided input" and tell the user what's missing.
+## Build and verify
 
-## Workflow
+Use the ARA schema and create only files the sources warrant. Bind claims to
+experiments, evidence, and reproducibility artifacts; keep exact numbers in
+evidence rather than inventing precision in narrative fields.
 
-```
-1. READ all inputs
-2. REASON through the 4-stage epistemic protocol (see below)
-3. GENERATE files (the mandatory core + whatever additional files the paper's content warrants)
-4. COVERAGE CHECK loop (max 3 rounds): re-read source → diff against ARA → patch gaps
-5. VALIDATE by running Seal Level 1
-6. FIX any failures, re-validate
-7. REPORT summary to user
-```
+Read these references as needed:
 
-### Step 1: Read Inputs
+- [ARA schema](references/ara-schema.md) for file-level fields and links.
+- [Exploration tree specification](references/exploration-tree-spec.md) for
+  trace-node structure.
+- [Figure extraction guide](references/figure-extraction-guide.md) for visual
+  evidence work.
+- [Validation checklist](references/validation-checklist.md) before handoff.
 
-Read ALL inputs thoroughly before generating. For PDFs, read every page **including appendices**
-(they carry reproduction-critical content). For repos, prioritize README → core code → configs →
-environment.
-
-**Read figures visually, not just their captions.** Much of a paper's evidence lives in plots,
-diagrams, and qualitative samples whose information cannot be recovered from surrounding text.
-Render PDF pages/regions to PNG (`python` with PyMuPDF/`fitz` or `pdf2image`) and Read them as
-images; read standalone image files directly. Treat reading a figure as a deliberate extraction
-step — see Stage 1's visual evidence pass.
-
-### Step 2: 4-Stage Epistemic Chain-of-Thought
-
-Before writing files, reason through these 4 stages.
-
-**Stage 1 — Semantic Deconstruction**
-Strip narrative framing. Extract the raw knowledge atoms: formulations/equations; architectural
-or method specifications; configurations (hyperparameters, hardware, datasets, seeds); ALL
-numerical results (exact, never rounded); citation dependencies and their roles; negative results
-and ablation findings; implementation tricks and sensitivity observations.
-
-Then perform the **evidence pass** — capture every table and figure, completely and in order.
-
-**Stage 2 — Cognitive Mapping**
-Map the atoms into `/logic/`: problem.md, claims.md, concepts.md, experiments.md, solution/,
-related_work.md.
-
-**Stage 3 — Artifact Layer (`src/`)**
-Capture every concrete artifact the source actually contains, in its native form.
-
-**Stage 4 — Exploration Graph Extraction**
-Reconstruct the research DAG for `/trace/exploration_tree.yaml`.
-
-### Step 3: Generate Files
-
-Write the mandatory core, then the additional files the paper warrants.
-See `${CLAUDE_SKILL_DIR}/references/ara-schema.md` for field-level format.
-
-### Step 4: Coverage Check Loop (max 3 rounds)
-
-Re-read the source, find anything not yet captured or only shallowly captured, patch it.
-
-### Step 5: Validate
-
-Run ARA Seal Level 1. See `${CLAUDE_SKILL_DIR}/references/validation-checklist.md`.
-
-### Step 6: Fix & Iterate
-
-For each failure: read the file, apply targeted edits (prefer Edit over rewrite), re-validate.
-
-### Step 7: Report
-
-Print: artifact location; file count and total size; validation result (pass/fail with details);
-key stats (claims, experiments, concepts, tree nodes, evidence tables/figures).
-
-## Critical Rules
-
-1. **Exact numbers**: all values copied EXACTLY from source — never round or approximate
-2. **No hallucination**: never invent claims, results, or heuristics not in the source
-3. **Experiments have NO exact numbers**: `experiments.md` is directional only; exact numbers live in `evidence/`
-4. **Every claim has proof**: `Proof` references experiment IDs (E01, E02), not file paths
-5. **Cross-layer binding**: Claims ↔ Experiments ↔ Evidence ↔ Code refs must all resolve
-6. **Dead ends matter**: include failed approaches, rejected alternatives, ablation findings
-7. **"Not specified"**: if information is genuinely unavailable, write "Not specified in paper" — never guess
-8. **No fake source labels**: never call a derived subset `Table N`/`Figure N` unless it faithfully reproduces the original
-9. **No synthetic trace history**: don't invent decisions, dead ends, or experiments not explicit in the inputs
-10. **Evidence-limited wording**: don't use stronger language than the evidence supports
-11. **Visual extraction is honest extraction**: read figures by looking; mark estimates `≈`
-12. **Complete, ordered evidence**: file EVERY numbered table and figure, in order
-13. **Fit the file set to the paper, not the paper to a template**
-14. **`src/` holds concrete artifacts, not re-encoded prose**
-15. **Source-bounded minimums**: any count or required field is a target, never a license to invent
-16. **Cite by verification, and ask on conflict**
-
-## Reference Files
-
-Load on demand:
-- `${CLAUDE_SKILL_DIR}/references/ara-schema.md` — field-level format for every file
-- `${CLAUDE_SKILL_DIR}/references/exploration-tree-spec.md` — exploration tree YAML spec
-- `${CLAUDE_SKILL_DIR}/references/validation-checklist.md` — all Seal Level 1 checks
-- `${CLAUDE_SKILL_DIR}/references/figure-extraction-guide.md` — reading plots/diagrams/samples
+Run the applicable structural validation, repair actual failures, and report:
+the artifact location, sources read, gaps or conflicts, evidence coverage,
+validation result, and any unverified interpretation. Do not call a plan or a
+successful setup check an empirical result.

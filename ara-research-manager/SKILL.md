@@ -1,115 +1,63 @@
 ---
-name: research-manager
-description: |
-  End-of-turn research process recorder with progressive crystallization. Invoked at the END of
-  EVERY turn, after the user's current request has been fully addressed and before yielding control
-  back to the user. Reviews what happened in the turn, extracts research-significant events, and
-  writes them into the ara/ artifact through a three-stage pipeline: Context Harvester → Event
-  Router → Maturity Tracker. Trace events (decisions, experiments, dead ends, pivots) are recorded
-  immediately as journey facts. Knowledge events (claims, heuristics, concepts, constraints) are
-  staged first and crystallize into typed layers ONLY when closure signals appear — topic
-  abandonment, verbal affirmation, empirical resolution, or artifact commitment. NEVER mid-turn.
-  All entries carry provenance tags (user / ai-suggested / ai-executed / user-revised).
-user-invocable: true
-argument-hint: "[optional: hint about what happened this turn]"
-allowed-tools: Read, Write, Edit, Glob, Grep
+name: ara-research-manager
+description: Record completed research-significant decisions, results, pivots, or evidence updates in an already selected ARA. Use only at the end of a research turn with a valid project ARA; skip ordinary discussion, planning, read-only audits, and non-research work.
 metadata:
   author: ara-commons
-  version: "2.2.0"
-  tags: [research, process-recording, provenance, progressive-crystallization, knowledge-management]
+  category: research-tooling
+  version: "3.0.0"
 ---
 
-# Live Research Project Manager (Live PM)
+# ARA Research Manager
 
-You are the Live PM. You run a per-turn epilogue that captures research activity into the
-`ara/` artifact while honoring the principle of **progressive crystallization**: forcing
-premature structure distorts the record. Most observations are staged and only mature into
-formal entries when externally observable closure signals indicate the researcher has
-treated them as settled.
+Maintain a selected ARA as an honest, append-only research ledger with
+progressive crystallisation. This skill is a narrow end-of-turn recorder, not a
+universal memory system and not a reason to create research state.
 
-## Layer Mutability
+## Eligibility gate
 
-- **`ara/logic/` is mutable** — current best understanding; Stage 4 reconciles it freely.
-- **`ara/trace/` and `ara/staging/` are append-only and immutable** — the journey record.
+Write only when all conditions hold:
 
-## When This Skill Runs
+1. The turn produced a research-significant fact: an explicit decision,
+   completed experiment or evidence audit, documented dead end, pivot, or
+   material evidence change.
+2. The target ARA is already present and has been selected by project guidance
+   or the user.
+3. The event can be grounded in files, commands, user statements, or other
+   durable evidence available in the turn.
 
-- **NEVER mid-turn.**
-- **ALWAYS at end of turn.** After the user's request is fully addressed.
-- **Per-turn cadence.** A turn = one user message + the agent's response.
-- **Skip empty turns.** Greetings, acknowledgments, clarifying questions with no new info.
+Skip greetings, general advice, planning-only work, clarifying questions,
+read-only audits, implementation setup without a result, and any turn where
+the target ARA is ambiguous. Never initialise `ara/` implicitly.
 
-## The Four-Stage Pipeline
+## Authority and mutability
 
-1. **Context Harvester** — scan this turn, identify research-significant activity
-2. **Event Router** — classify, tag provenance, route (see `references/event-taxonomy.md`)
-3. **Maturity Tracker** — crystallize staged observations on closure signals
-4. **Logic Layer Reconciliation** — reconcile `logic/` with crystallized entries
+Read the nearest project `AGENTS.md` and ARA contract first. Project rules
+choose the ARA root and may add gates. In the absence of a more specific
+contract:
 
-### Closure Signal Taxonomy
+- `trace/`, `staging/`, and `evidence/` are append-only;
+- `logic/` is a current-state view and changes only after a closure signal;
+- interpretations stage by default; promote them only after explicit user
+  affirmation, empirical resolution, topic abandonment, or artifact commitment;
+- never silently erase contradictions. Record the conflict and leave it
+  unresolved until authority or evidence settles it.
 
-A staged observation crystallizes when **at least one** of these signals is present:
+Use `references/event-taxonomy.md` when classifying an event or deciding
+whether it belongs in the exploration tree, session record, or staging.
 
-1. **Topic abandonment** — no events on the topic in last k=5 turns AND not in `open_threads`
-2. **Verbal affirmation** — user explicitly endorsed: "yes" / "confirmed" / "let's go with X"
-3. **Empirical resolution** — experiment produced a result and researcher commented on it
-4. **Artifact commitment** — a downstream artifact now depends on the observation
+## Single-writer procedure
 
-**Default to non-promotion.** If no signal is clearly present, leave it staged.
+1. Re-read the target files immediately before writing. Determine the current
+   identifier sequence and existing session record from the files, not memory.
+2. Record only what actually occurred; label provenance accurately. AI-suggested
+   content remains AI-suggested until the user explicitly adopts it.
+3. A subagent or OpenResearch worker may propose events, but the current primary
+   agent is the only writer. Merge proposals only after checking their evidence.
+4. For any `logic/` change, preserve the before/after rationale in the relevant
+   session record and keep historical trace entries intact.
+5. Parse modified YAML and run the repository's ARA validator before handoff.
+   If validation fails, repair the record or report it as incomplete; do not
+   claim successful capture.
 
-### Allowed Status Transitions
-
-```
-hypothesis ──► testing ──► supported
-     │            │            ▲
-     │            └──► weakened┘
-     ├────────────────► refuted    (terminal, empirical)
-     ├────────────────► withdrawn  (terminal, non-empirical)
-     └─ any ─────────► revised    (Statement rewritten)
-```
-
-## Per-Turn Procedure
-
-```
-1. Read existing ara/ files (current state, next IDs).
-2. Stage 1 — harvest this turn's candidate events.
-3. Stage 2 — classify/route each (per event-taxonomy.md).
-4. Stage 3 — crystallize staged observations whose closure signal fired.
-5. Stage 4 — reconcile logic/ entries; record before/after in session record.
-6. Append turn events to the relevant topic session record.
-7. Print one-line summary.
-```
-
-## ARA Directory Structure
-
-```
-ara/
-  PAPER.md
-  logic/                            # MUTABLE
-    claims.md  problem.md  concepts.md  experiments.md  related_work.md
-    solution/
-  src/
-  trace/                            # APPEND-ONLY
-    exploration_tree.yaml
-    pm_reasoning_log.yaml
-    sessions/
-      session_index.yaml
-      YYYY-MM-DD-topic-slug.md
-  evidence/                         # APPEND-ONLY
-    README.md
-    tables/
-    figures/
-  staging/                          # APPEND-ONLY
-    observations.yaml
-```
-
-## Rules
-
-1. **End-of-turn only; never mid-turn.** Skip empty turns.
-2. **Never fabricate.** Log only what actually happened or was discussed.
-3. **Stage interpretive events by default; crystallize only on a closure signal.**
-4. **Never auto-upgrade provenance.** `ai-suggested` holds until explicit user affirmation.
-5. **Stage 4 defaults to no change.** Terminal states need explicit triggers.
-6. **Respect layer mutability**: `logic/` overwrites in place; `trace/` and `staging/` are append-only.
-7. **Never silently overwrite contradictions** — flag both, append an `unresolved` decision node.
-8. **Read target files first** (correct IDs, no dupes); establish forensic bindings.
+Report one concise line naming the selected ARA, record(s) changed, and
+validation outcome. Do not record a new event solely because this skill ran.

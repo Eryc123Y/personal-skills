@@ -1,25 +1,17 @@
 # personal-skills
 
-Eric's personal Claude Code skills — private collection.
+Eric's personal, cross-client skills. CC Switch manages their runtime exposure;
+this repository is their versioned source.
 
 ## Skills
 
 ### Research Tooling
 | Skill | Purpose |
 |---|---|
-| `ara-compiler` | Universal ARA compiler — converts any research input into a structured ARA artifact |
-| `ara-research-manager` | End-of-turn research recorder with progressive crystallisation |
+| `ara-compiler` | Evidence-first compiler for new, user-scoped ARA artifacts |
+| `ara-research-manager` | Narrow end-of-turn recorder for grounded events in an existing ARA |
 | `ara-rigor-reviewer` | ARA Seal Level 2 epistemic review |
-| `research-supervisor` | Lightweight router for FYP/academic research workflow |
-
-### Analysis (Prism Suite)
-| Skill | Purpose |
-|---|---|
-| `prism-discover` | Find all possible analysis domains for an artifact before diving in |
-| `prism-scan` | Structural analysis via dynamically generated cognitive lens |
-| `prism-reflect` | Constraint transparency — analyses what its own analysis concealed |
-| `prism-full` | Multi-pass analysis with mandatory adversarial self-correction |
-| `prism-3way` | Three orthogonal operations (WHERE/WHEN/WHY) + synthesis |
+| `research-supervisor` | Minimal router for research authority and specialist selection |
 
 ### Diagramming
 | Skill | Purpose |
@@ -33,4 +25,6 @@ Eric's personal Claude Code skills — private collection.
 
 ## Install via cc-switch
 
-Each top-level folder is one skill. Point cc-switch at `Eryc123Y/personal-skills`.
+Each top-level folder is one skill. Point CC Switch at
+`Eryc123Y/personal-skills`; after a remote update, use its update flow rather
+than editing CC Switch's managed skill copies directly.
