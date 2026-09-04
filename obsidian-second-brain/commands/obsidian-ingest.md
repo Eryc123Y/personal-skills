@@ -90,17 +90,17 @@ The argument is a URL, file path, or pasted text. If no argument, ask what to in
      - Search the entities folder (resolved per `references/folder-map.md` - wiki-style `wiki/entities/`, Obsidian-style `People/`) for existing page
      - If found: REWRITE the page - merge new info with old, update role/context/interactions, add new links. Don't just append - integrate.
      - If not found: create new entity page with full context
-   
+
    - **Concepts agent**: for each idea/framework/methodology:
      - Search the concepts folder (resolved per `references/folder-map.md` - wiki-style `wiki/concepts/`, Obsidian-style `Ideas/` + `Knowledge/`) for existing or related pages
      - If found: REWRITE - update the concept with new evidence, new examples, new connections. If the new source adds depth, rewrite the whole section.
      - If not found: create new concept page
      - If the ingest reveals a PATTERN across multiple existing concepts: create a new synthesis page that connects them (e.g., "Three sources now mention X - this is a trend, not a one-off")
-   
+
    - **Projects agent**: for each project referenced:
      - Search the projects folder (resolved per `references/folder-map.md` - wiki-style `wiki/projects/`, Obsidian-style `Projects/`) for matching project
      - If found: update with new findings, add to Recent Activity, update Key Decisions if the source contains relevant decisions
-   
+
    - **Contradictions agent**: for each claim in the new source:
      - Search the vault for CONFLICTING claims in existing pages
      - If contradiction found: UPDATE the existing page to note the conflict, add the new evidence, and mark which claim is more recent/authoritative
