@@ -1,10 +1,10 @@
 ---
 name: research-supervisor
-description: Route research-focused requests to the smallest appropriate academic or ARA workflow. Use for research direction, literature synthesis, experiment planning, paper work, or ARA selection; do not use for ordinary coding, generic analysis, or automatic project-state recording.
+description: Help choose a research workflow or evidence authority when the user asks for research direction, experiment planning, or ARA selection. Direct paper reading and language editing use their specialist skills.
 metadata:
   author: ara-commons
   category: research-tooling
-  version: "3.0.0"
+  version: "3.1.0"
 ---
 
 # Research Supervisor
@@ -29,21 +29,24 @@ and scientific stop rules in the repository rather than in this skill.
 |---|---|
 | Turn supplied papers, repositories, logs, or notes into a new ARA | `ara-compiler` |
 | Capture a completed research-significant turn in an existing selected ARA | `ara-research-manager` |
-| Review an already structurally valid ARA for epistemic quality | `ara-rigor-reviewer` |
-| Deep research, systematic review, fact checking, experiment design, or a full research-to-paper workflow | `academic-research-suite` |
+| Audit an existing ARA for claim support and methodological rigor | `ara-rigor-reviewer` |
+| Multi-source investigation or literature synthesis | local `deep-research`; use the Work deep-research plugin when the user selects that workflow |
+| Interpret a supplied paper | `paper-analyzer` |
+| Experiment design | Work directly from the project evidence and requested decision: hypotheses, controls, evaluation, resource limits, and completion criteria |
 | Early idea feasibility or fatal-flaw review | `idea-evaluator` |
 | Paper structure, benchmark-paper structure, introduction, figures, or pre-submission review | the corresponding specialist (`tech-paper-template`, `benchmark-paper-template`, `intro-drafter`, `figure-designer`, `pre-submission-reviewer`) |
 | Technical system or process diagram | `d2-diagram` |
 | Paragraph-level academic prose, grammar, or citation style | `academic-writing-assistant` |
 
-Use a full ARS pipeline only when the user explicitly requests an end-to-end
-research-to-paper workflow. ARA compilation captures existing material; ARS
-actively gathers, evaluates, or writes new material. They are complementary.
+For an end-to-end request, compose only the stages needed for the requested
+outcome. Do not load a second orchestration suite or create an ARA unless the
+user asks for one. ARA stores research evidence; it is not a prerequisite for
+research, experiment planning, or writing.
 
 ## Operating boundaries
 
-- Give advice to the user before changing an ARA. Only the selected ARA is the
-  project ledger.
+- Use the selected project ledger. Advice and read-only review do not authorize
+  edits; an already authorized update does not require another approval round.
 - Preserve the distinction between implementation readiness, provenance,
   public-score evidence, and validated scientific claims.
 - In OpenResearch, native `orx-*` skills are an execution lane owned by that

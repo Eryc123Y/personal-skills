@@ -1,10 +1,10 @@
 ---
 name: ara-research-manager
-description: Record completed research-significant decisions, results, pivots, or evidence updates in an already selected ARA. Use only at the end of a research turn with a valid project ARA; skip ordinary discussion, planning, read-only audits, and non-research work.
+description: Update an existing, selected ARA with grounded research decisions or results when the user or project instructions authorize recording. Skip ordinary discussion and read-only review.
 metadata:
   author: ara-commons
   category: research-tooling
-  version: "3.0.0"
+  version: "3.1.0"
 ---
 
 # ARA Research Manager
@@ -17,17 +17,20 @@ universal memory system and not a reason to create research state.
 
 Write only when all conditions hold:
 
-1. The turn produced a research-significant fact: an explicit decision,
-   completed experiment or evidence audit, documented dead end, pivot, or
-   material evidence change.
-2. The target ARA is already present and has been selected by project guidance
+1. The user or applicable project instructions authorize this ledger update.
+   An existing authorization covers routine recording within its scope.
+
+2. The turn produced a research-significant fact: an explicit decision,
+   completed experiment, an evidence audit selected for recording, documented
+   dead end, pivot, or material evidence change.
+3. The target ARA is already present and has been selected by project guidance
    or the user.
-3. The event can be grounded in files, commands, user statements, or other
+4. The event can be grounded in files, commands, user statements, or other
    durable evidence available in the turn.
 
 Skip greetings, general advice, planning-only work, clarifying questions,
-read-only audits, implementation setup without a result, and any turn where
-the target ARA is ambiguous. Never initialise `ara/` implicitly.
+read-only audits without a recording request, implementation setup without a
+research result, and any turn where the target ARA is ambiguous. Never initialise `ara/` implicitly.
 
 ## Authority and mutability
 
@@ -37,12 +40,13 @@ contract:
 
 - `trace/`, `staging/`, and `evidence/` are append-only;
 - `logic/` is a current-state view and changes only after a closure signal;
-- interpretations stage by default; promote them only after explicit user
-  affirmation, empirical resolution, topic abandonment, or artifact commitment;
+- interpretations stage by default; promote a claim only when its evidence
+  supports the stated scope. User adoption, committing a file, or abandoning a
+  topic may close a decision but does not establish empirical truth;
 - never silently erase contradictions. Record the conflict and leave it
   unresolved until authority or evidence settles it.
 
-Use `references/event-taxonomy.md` when classifying an event or deciding
+Use [event taxonomy](references/event-taxonomy.md) when classifying an event or deciding
 whether it belongs in the exploration tree, session record, or staging.
 
 ## Single-writer procedure

@@ -1,10 +1,10 @@
 ---
 name: ara-compiler
-description: Compile user-supplied research papers, repositories, experiment logs, or notes into a grounded, validated Agent-Native Research Artifact (ARA). Use when the user explicitly asks to create or substantially reconstruct an ARA; do not use for ordinary summaries or to alter an existing project ledger without an explicit target.
+description: Create or reconstruct an ARA from supplied research sources when the user requests an ARA artifact. Ordinary paper summaries and existing-ledger updates use other workflows.
 metadata:
   author: ara-commons
   category: research-tooling
-  version: "2.0.0"
+  version: "2.1.0"
 ---
 
 # ARA Compiler
@@ -23,7 +23,8 @@ information, and proposed work.
 - If the source is incomplete, compile what is supported and mark the gap as
   unavailable. Do not invent a claim, metric, experiment, decision, or history.
 - Resolve material conflicts only when the source authority is clear; otherwise
-  preserve the conflict and ask the user how to treat it.
+  preserve the conflict and continue independent compilation. Ask only when
+  choosing between sources is necessary to complete the requested artifact.
 
 ## Evidence-first compilation
 
@@ -42,7 +43,10 @@ information, and proposed work.
 
 ## Build and verify
 
-Use the ARA schema and create only files the sources warrant. Bind claims to
+Use the project schema when one exists; otherwise use the bundled schema as
+a default for new artifacts. Never migrate an existing ARA implicitly. Create
+only files the sources and requested coverage warrant. There are no minimum
+counts for concepts, experiments, or exploration nodes. Bind claims to
 experiments, evidence, and reproducibility artifacts; keep exact numbers in
 evidence rather than inventing precision in narrative fields.
 

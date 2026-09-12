@@ -10,7 +10,7 @@ this repository is their versioned source.
 |---|---|
 | `ara-compiler` | Evidence-first compiler for new, user-scoped ARA artifacts |
 | `ara-research-manager` | Narrow end-of-turn recorder for grounded events in an existing ARA |
-| `ara-rigor-reviewer` | ARA Seal Level 2 epistemic review |
+| `ara-rigor-reviewer` | Evidence-linked ARA review; optional scoring when requested |
 | `research-supervisor` | Minimal router for research authority and specialist selection |
 
 ### Diagramming
@@ -22,6 +22,16 @@ this repository is their versioned source.
 | Skill | Purpose |
 |---|---|
 | `typst-writer` | Eric's Typst workflow: Scholia notes, Monash Touying slides, native math, and editable diagrams |
+
+## Research workflow deployment
+
+`academic-research-suite` is retired from active client exposure as of 2026-09-13;
+retain its CC Switch registration and managed source for reversible recovery,
+with all client enablement flags off. Do not route research requests through it.
+Research investigation uses `deep-research`, paper interpretation uses
+`paper-analyzer`, and experiment planning follows project evidence directly.
+ARA compilation, recording, and review are independent workflows, not a mandatory
+research pipeline. Existing project ledgers are not migrated by this update.
 
 ## Install via cc-switch
 
@@ -50,7 +60,9 @@ The name in `SKILL.md` is the user-facing invocation name.
 | `obsidian-second-brain` | `obsidian-second-brain` | Vault operations with explicit read/write scope |
 
 `academic-writing-assistant` remains the narrow academic language-editing entry.
-Existing ARA and Typst skills retain their research and artifact validation gates.
+Existing ARA contracts and Typst artifact checks remain authoritative. New ARA
+compilation uses source-bounded coverage without quantity quotas. ARA recording
+requires a selected ledger and user or project authorization.
 
 See [source provenance](docs/skill-provenance.md) for upstream attribution and
 which components are original instructions rather than redistributed bundles.

@@ -1,6 +1,10 @@
 # Level 2 Review Dimensions — Scoring Anchors and Check Inventory
 
-Six dimensions of epistemic quality. All checks are semantic.
+Six dimensions of epistemic quality. Apply checks to the claim type and evidence
+actually in scope; mark inapplicable checks rather than forcing a defect.
+Numerical anchors and the historical grade mapping below are optional, only for
+a requested scoring workflow. They are uncalibrated reviewer judgments, not
+certification, empirical quality measurements, or predictions of venue acceptance.
 
 ---
 
@@ -73,7 +77,7 @@ Six dimensions of epistemic quality. All checks are semantic.
 | Dead-end specificity | failure_mode is concrete, lesson is transferable | major |
 | Decision rationale quality | WHY chosen path preferred over real alternatives | major |
 | Rebutted-branch consistency | No claim advocates a dead_end approach | critical |
-| Exploration breadth | Main design choices have ≥2 documented alternatives | minor |
+| Exploration breadth | Document actual alternatives when the sources report them; absence alone does not establish poor exploration | minor |
 | Honesty signal | Tree documents genuine negatives, not post-hoc justification | suggestion |
 
 ---

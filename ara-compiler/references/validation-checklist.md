@@ -1,110 +1,57 @@
-# ARA Seal Level 1 — Validation Checklist
+# ARA Structural Validation
 
-Fix ALL failures before reporting success.
+Validate the selected project contract first. This checklist is a fallback for
+new artifacts using the bundled paper-oriented schema; it does not migrate or
+invalidate a different established ARA layout.
 
-## 1. Directory Existence
+## Structure and coverage
 
-Mandatory-core dirs — all must exist: `logic/`, `logic/solution/`, `src/`, `trace/`, `evidence/`.
+- Parse YAML/frontmatter and check the fields required by the selected schema.
+- Ensure the manifest indexes the files actually produced, including the source
+  set, requested coverage, omissions, and unavailable evidence.
+- For the default layout, check PAPER.md, the applicable logic files, source
+  environment, trace, and evidence index. A section with no source support may
+  state that limitation; do not manufacture content to populate a template.
+- There are no minimum counts for concepts, experiments, alternatives, or trace
+  nodes. Code files are required only when the requested artifact includes code.
 
-## 2. Mandatory File Existence (non-empty, >10 bytes)
+## Claim and protocol bindings
 
-- `PAPER.md`
-- `logic/problem.md`
-- `logic/claims.md`
-- `logic/concepts.md`
-- `logic/experiments.md`
-- `logic/solution/constraints.md`
-- `logic/related_work.md`
-- `src/environment.md`
-- `trace/exploration_tree.yaml`
-- `evidence/README.md`
-- An evidence file for every numbered table and figure
+- Each claim has a statement, status, scope, evidence basis, and falsification
+  criteria appropriate to its type. Separate supported findings from hypotheses.
+- Referenced claim and experiment identifiers resolve to the intended entities.
+- Experiment protocols distinguish proposed work from completed evaluations;
+  exact measured results retain source bindings in evidence.
+- Conditions needed to interpret a result (split, baseline, configuration,
+  metric, uncertainty) are recorded when available, otherwise marked missing.
 
-## 3. PAPER.md Checks
+## Visual and tabular evidence
 
-- Starts with `---` (YAML frontmatter); valid YAML mapping
-- Contains keys: `title`, `authors`, `year`
-- Body contains "Layer Index" section
+- Each included object has a precise source locator and extraction method.
+- Preserve complete source tables when claiming full extraction; label subsets.
+- Preserve figure images/crops when available, with type and reading uncertainty.
+  If an image is unavailable, record the limitation instead of fabricating one.
+- Quantitative estimates use approximate notation and an identified extraction
+  method. Qualitative images and diagrams do not require invented numeric tables.
+- For full-paper coverage, inventory every numbered table and figure. For partial
+  coverage, name the included scope and exclusions. Uninspected evidence is not
+  verified merely because its caption or reference is present.
 
-## 4. Field-Level Checks
+## Trace and provenance
 
-### logic/claims.md
-- Has `## C\d+` blocks (at least one claim)
-- Contains `**Statement**`, `**Status**`, `**Falsification criteria**`, `**Proof**`, `**Evidence basis**`, `**Interpretation**`
+- Parse trace YAML, resolve cross-edges, and reject duplicate IDs or cycles.
+- Check fields for each applicable node type against the selected schema.
+- Historical decisions, pivots, failures, and experiments have direct source
+  support. Ablation weakness alone does not establish that a route was abandoned.
+- Keep AI interpretations visibly distinct from observed or user-adopted events.
+- An empty trace is acceptable when the available sources reveal no journey.
 
-### logic/problem.md
-- Has `### O\d+` blocks (observations)
-- Has `### G\d+` blocks (gaps)
-- Has Key Insight section
+## Verification and reporting
 
-### logic/experiments.md
-- Has `## E\d+` blocks (at least 3)
-- Contains `**Verifies**`, `**Setup**`, `**Procedure**`, `**Expected outcome**`
-
-### logic/solution/heuristics.md (when present)
-- Has `## H\d+` blocks with `**Rationale**`, `**Sensitivity**`, `**Bounds**`
-
-### logic/related_work.md
-- Has `## RW\d+` blocks with `**Type**`, `**Delta**`
-
-### logic/concepts.md
-- Has `## ` sections (at least 5) with `**Definition**`
-
-## 5. Count Checks
-
-Counts are **source-bounded targets, not quotas** — never pad with invented items.
-
-- `logic/concepts.md`: aim ≥5 concept sections
-- `logic/experiments.md`: aim ≥3 experiment blocks
-- `src/execution/`: ≥1 `.py` file only when the work has concrete code
-
-## 6. Evidence Quality
-
-For each file in `evidence/tables/*.md` and `evidence/figures/*.md`:
-- Must contain `**Source**` field
-- **Must have a sibling screenshot `.png`** with a `**Screenshot**` field
-- Table files must contain a Markdown table
-
-For `evidence/figures/*.md`:
-- Must declare `**Figure type**` in {quantitative_plot, diagram, qualitative_sample, mixed}
-- Must declare `**Extraction method**` and `**Reading confidence**`
-- `quantitative_plot` must contain a data table OR explicit unreadable statement with trend summary
-- `diagram` and `qualitative_sample` must have visual description, NOT a fabricated numeric table
-- Estimated readings marked `≈` with extraction method `digitized_estimate`
-
-## 7. evidence/README.md
-
-- Must contain a Markdown table (file index)
-- All numbered tables and figures reflected
-
-## 8. Exploration Tree (YAML)
-
-- Parses as valid YAML
-- Has top-level `tree` key
-- All node types in {question, decision, experiment, dead_end, pivot}
-- Every node has `id`, `type`, `support_level`
-- Type-specific required fields: question:`description`, experiment:`result`, dead_end:`hypothesis,failure_mode,lesson`, decision:`choice,alternatives`, pivot:`from,to,trigger`
-- Explicit nodes include `source_refs`
-
-## 9. Cross-Layer Binding
-
-- Every `E\d+` in a claim's `**Proof**` must exist in experiments.md
-- Every `C\d+` in an experiment's `**Verifies**` must exist in claims.md
-- Any `C\d+` in a tree node's `evidence` field must exist in claims.md
-- Trace hygiene: no dead_end/decision/experiment nodes unsupported by source
-
-## 10. Citation Verification
-
-- Every repo path / `file:line` referenced exists
-- No fact about a repo artifact transcribed from paper without checking
-
-## 11. Evidence Ledger Completeness
-
-- **Every numbered `Table N` and `Figure N` is filed** with BOTH markdown and screenshot `.png`
-- Any deliberately not filed object listed in `evidence/README.md` with reason
-
-## 12. Self-Consistency
-
-- ARA-authored derived numbers recompute correctly
-- `PAPER.md` declared counts match actual files
-- Tree `evidence:` references are claim IDs (`C\d+`), not observation IDs
+- Check local file references and observed line locations; do not invent locators.
+- Recompute derived values when inputs are available and relevant to the claim.
+- Run the project's validator when available, recording its scope and outcome.
+  A manual checklist is not an executed validator or scientific validation.
+- Repair failures within the authorized artifact work. Report unresolved errors,
+  missing dependencies, incomplete coverage, and unverified interpretations.
+  Do not describe an artifact as passing checks that were not completed.

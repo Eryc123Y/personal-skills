@@ -1,22 +1,26 @@
 # Event Taxonomy & Routing Rules
 
-Canonical reference for **Stage 2 (Event Router)** of the Live PM pipeline.
+Classification guidance after the entrypoint recording conditions pass.
+Project paths, identifiers, and schemas take precedence over these defaults.
 
 ## Direct-Routed Events (Journey Layer)
 
-Write to `trace/exploration_tree.yaml` immediately at end of turn.
+For an authorized update, append supported journey events to the selected
+trace. This table grants no additional write authority.
 
 | Type | Signals | Required payload |
 |------|---------|------------------|
 | `question` | Research direction opened | `description` |
 | `decision` | User chose between alternatives | `choice`, `alternatives`, `evidence` |
-| `experiment` | Code ran a test/benchmark | `result`, `evidence` |
+| `experiment` | A research evaluation produced a result under a known protocol | `result`, `evidence` |
 | `dead_end` | Approach abandoned | `hypothesis`, `failure_mode`, `lesson` |
 | `pivot` | Major direction change | `from`, `to`, `trigger` |
 
 ## Staged-Routed Events (Interpretive)
 
-Write to `staging/observations.yaml` first.
+For an authorized update, stage interpretations in the project-selected staging
+file (default `staging/observations.yaml`). Code checks and environment setup
+are engineering evidence; they do not establish a scientific claim.
 
 | Candidate Event | Crystallizes To | `potential_type` |
 |-----------------|-----------------|------------------|
@@ -32,7 +36,7 @@ Write to `staging/observations.yaml` first.
 ```
 Journey fact (something that happened)?
   Choice between alternatives? → decision [DIRECT]
-  Code/test produced a result? → experiment [DIRECT]
+  Research evaluation produced a result? → experiment [DIRECT]
   Approach abandoned? → dead_end [DIRECT]
   Major direction change? → pivot [DIRECT]
   Research question opened? → question [DIRECT]

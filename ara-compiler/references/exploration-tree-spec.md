@@ -30,7 +30,8 @@ tree:
 
           - id: N04
             type: decision
-            support_level: inferred
+            support_level: explicit
+            source_refs: ["{source explicitly reporting the decision}"]
             title: "{What was decided}"
             choice: "{The chosen approach}"
             alternatives:
@@ -40,7 +41,8 @@ tree:
 
       - id: N03
         type: dead_end
-        support_level: inferred
+        support_level: explicit
+        source_refs: ["{source explicitly reporting abandonment}"]
         title: "{What was tried and failed}"
         hypothesis: "{What was expected}"
         failure_mode: "{Why it failed}"
@@ -77,7 +79,7 @@ A change in research direction.
 
 1. **Nested YAML**: Children appear inline under parent node's `children` list
 2. **Valid DAG**: No cycles. All `also_depends_on` IDs must exist in the tree
-3. **Target ~8+ nodes** covering the paper's key trajectory — but source-bounded, not a quota.
+3. **No minimum node count**. Record only the trajectory the sources reveal; an empty tree with a stated coverage gap is valid when no journey is available.
 4. **dead_end / decision nodes**: include every one the paper actually reveals. If the paper exposes none, do NOT invent one.
 5. **Every node has**: `id` (N01, N02...), `type`, `title`
 6. **Every node has `support_level`**: `explicit` or `inferred`
@@ -90,10 +92,12 @@ When building from a PDF:
 - **Central questions** → root nodes
 - **"We tried X" / "We evaluated Y"** → experiment nodes
 - **"We considered X but chose Y because..."** → decision nodes with alternatives
-- **Ablation results showing X hurts** → dead_end nodes
+- **Ablation results showing X hurts** → experiment results; classify as dead_end only when the sources report abandonment.
 - **"We initially pursued X but found..."** → pivot nodes
 
 Support-level guidance:
 - Mark a node `explicit` only if the paper directly reports it
-- Mark a node `inferred` if you are reconstructing from narrative structure
+- Narrative order alone does not establish a historical decision or failed route.
+  Keep inferred reconstructions in separately marked interpretation if the project
+  contract allows them; otherwise omit them from the factual journey.
 - Prefer omission over fabricating a highly specific inferred node

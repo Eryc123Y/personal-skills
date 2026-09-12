@@ -1,5 +1,9 @@
 # ARA Directory Schema — Complete Field-Level Reference
 
+This is the default layout for a new paper-oriented ARA. An existing project
+contract takes precedence. Record requested coverage and omissions in PAPER.md;
+do not pad a partial-source artifact or migrate an existing ledger to this layout.
+
 ## Directory Structure
 
 `✓` = mandatory core (always present). Everything else is created **only when the paper's content
@@ -29,14 +33,16 @@ trace/
   exploration_tree.yaml             # ✓ Research DAG: nested YAML tree with typed nodes
 evidence/
   README.md                         # ✓ Index mapping every evidence file to claims
-  tables/                           # ✓ every numbered Table: tableN.md + tableN.png
-  figures/                          # ✓ every numbered Figure: figureN.md + figureN.png
+  tables/                           # selected tables, with extraction and source binding
+  figures/                          # selected figures, with source image when available
   proofs/                           # as warranted: derivations / proofs
 rubric/requirements.md              # (Only if a rubric is provided)
 ```
 
-Every numbered table and figure in the source gets BOTH a markdown file and a screenshot `.png`
-(see the evidence specs below).
+For a full-paper compilation, inventory every numbered table and figure.
+Preserve the requested evidence as structured extraction plus an image or exact
+source locator. For partial coverage, list exclusions and unavailable visuals;
+never fabricate a screenshot or declare uninspected material verified.
 
 ## Progressive Disclosure (3 Levels)
 
@@ -120,7 +126,7 @@ Each claim MUST have ALL fields:
 
 ## logic/concepts.md
 
-Target ≥5 concepts, but capture the paper's *genuine* technical terms. One section per concept:
+Capture only source-supported technical terms; there is no minimum count. One section per concept:
 ```markdown
 ## {Term Name}
 - **Notation**: {LaTeX or symbolic notation, or "—" if none}
@@ -133,7 +139,9 @@ Target ≥5 concepts, but capture the paper's *genuine* technical terms. One sec
 
 ## logic/experiments.md
 
-≥3 experiments. Declarative plans, NOT scripts. NO exact numerical results.
+Record source-supported experiments and clearly label proposed evaluations.
+There is no minimum count; state when no experiments are available. These are
+declarative protocols, not scripts; measured results belong in evidence/.
 
 ```markdown
 ## E{NN}: {Short title}
@@ -201,7 +209,8 @@ Include only heuristics the paper actually states:
 
 ## evidence/tables/{file}.md (+ screenshot)
 
-Every numbered table gets BOTH a markdown file AND a screenshot `tableN.png`.
+For each selected table, preserve the data and a screenshot when visual layout
+matters. Otherwise retain an exact source locator; disclose image unavailability.
 
 ```markdown
 # Table {N} - {Caption or short description}
@@ -220,7 +229,9 @@ Every numbered table gets BOTH a markdown file AND a screenshot `tableN.png`.
 
 ## evidence/figures/{name}.md (+ screenshot)
 
-Every numbered figure gets BOTH a markdown file AND a screenshot `figureN.png`.
+For each selected figure, preserve a source image/crop and its interpretation
+when available. Otherwise give a precise locator and state what was actually
+inspected; do not infer a visual result from an unread caption alone.
 
 ```markdown
 # Figure N: {Title}
@@ -294,4 +305,6 @@ tree:
 ```
 
 - `support_level: explicit` = directly grounded in provided source material
-- `support_level: inferred` = reconstruction, not a literal session record
+- `support_level: inferred` = proposed interpretation, not a historical event.
+  Keep inferred decisions or dead ends outside the factual journey unless the
+  selected project contract explicitly supports separately marked reconstruction.

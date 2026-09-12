@@ -1,21 +1,24 @@
 ---
 name: ara-rigor-reviewer
-description: Perform a semantic, epistemic review of an already structurally valid Agent-Native Research Artifact (ARA). Use after Level 1 validation when the user asks to audit claim support, scope, exploration integrity, or methodological rigor.
+description: Review an existing ARA for claim support, scope, exploration integrity, or methodological rigor when an evidence audit is requested.
 metadata:
   author: ara-commons
   category: research-tooling
-  version: "3.1.0"
+  version: "3.2.0"
 ---
 
 # ARA Rigor Reviewer
 
-Review the epistemic quality of an existing ARA. This is Seal Level 2: it does
-not substitute for structural validation or invent missing evidence.
+Review the epistemic quality of an existing ARA. Findings describe observed
+evidence and limitations; they are not a scientific certification or venue
+acceptance decision.
 
 ## Preconditions and boundaries
 
-- Confirm that the target ARA and its Level 1 structural validation result are
-  available. If validation has not passed, stop and route to structural repair.
+- Establish the target and structural-validation status. If validation is absent
+  or failing, identify the affected references and review the readable evidence.
+  Do not claim a completed Level 2 validation while required Level 1 checks fail.
+  Structural repair is a separate mutation and requires task authorization.
 - Read project guidance first. Preserve project-specific gates and avoid turning
   development-only or setup evidence into scientific claims.
 - Treat a missing source, unresolved reference, or unavailable experiment as a
@@ -33,8 +36,9 @@ not substitute for structural validation or invent missing evidence.
 3. For every finding, give a severity, target file/entity, observable evidence
    or explicit absence, reasoning, and a concrete remediation. Do not claim an
    exact source span unless it was observed.
-4. Score each dimension from 1–5 and calculate the overall grade using the
-   reference mapping. Explain any score that materially drives the grade.
+4. Default to evidence-linked findings and coverage gaps. Use the reference
+   scoring rubric only if the user or project contract requests it; label scores
+   as reviewer judgments, not calibrated measurements or acceptance decisions.
 5. Produce `level2_report.json` at the target ARA root only when the requested
    review is meant to materialise an artifact; otherwise return the review to
    the user without modifying the ARA.

@@ -5,3 +5,5 @@ Adapted from [HKUSTDial/Supervisor-Skills](https://github.com/HKUSTDial/Supervis
 Local adaptation, 2026-09-05: The entrypoint was changed to narrow workflow selection, use Codex as the primary agent, qualify historical tool recommendations, and remove unconditional recaps and pauses. Its license metadata was corrected to match the included upstream license. The adaptation retains noncommercial and share-alike terms.
 
 This maintained version is distributed through personal-skills and installed by CC Switch. Review upstream changes in the repository before publishing another version.
+
+Local adaptation, 2026-09-13: Replaced the prescriptive entrypoint with task-scoped planning, evidence boundaries, and optional historical references. Removed mandatory recitals and user-attestation gates; preserved source attribution and license.
