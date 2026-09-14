@@ -16,6 +16,8 @@ historical upstream scripts, templates, prompts, or other resources:
 - `deep-research`: evidence-backed investigation with task-dependent scope.
 - `paper-analyzer`, `paper-comic`, `paper-deck`: paper interpretation and visual
   deliverables using capabilities available in the current host.
+- `weekly-attendance-check-in`: current-semester unit discovery and verified
+  attendance submission from the user's authenticated Monash course sources.
 
 The historical installations were associated with `anthropics/skills`,
 `199-biotechnologies/claude-deep-research-skill`, and

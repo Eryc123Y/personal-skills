@@ -23,6 +23,11 @@ this repository is their versioned source.
 |---|---|
 | `typst-writer` | Eric's Typst workflow: Scholia notes, Monash Touying slides, native math, and editable diagrams |
 
+### Course Operations
+| Skill | Purpose |
+|---|---|
+| `weekly-attendance-check-in` | Discover current units and verify and submit weekly attendance records |
+
 ## Research workflow deployment
 
 `academic-research-suite` is retired from active client exposure as of 2026-09-13;
@@ -58,6 +63,7 @@ The name in `SKILL.md` is the user-facing invocation name.
 | `paper-deck` | `paper-deck` | Image-generated research presentations |
 | `vibe-research-workflow` | `vibe-research-workflow` | Research workflow planning and division of work |
 | `obsidian-second-brain` | `obsidian-second-brain` | Vault operations with explicit read/write scope |
+| `weekly-attendance-check-in` | `weekly-attendance-check-in` | Current-unit discovery and verified weekly attendance submission |
 
 `academic-writing-assistant` remains the narrow academic language-editing entry.
 Existing ARA contracts and Typst artifact checks remain authoritative. New ARA

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Weekly attendance check-in"
+  short_description: "Discover and submit weekly attendance"
+  default_prompt: "Use $weekly-attendance-check-in to discover this week’s units, check their official course sources, and submit matching attendance records."
