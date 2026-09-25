@@ -8,10 +8,7 @@ this repository is their versioned source.
 ### Research Tooling
 | Skill | Purpose |
 |---|---|
-| `ara-compiler` | Evidence-first compiler for new, user-scoped ARA artifacts |
-| `ara-research-manager` | Narrow end-of-turn recorder for grounded events in an existing ARA |
-| `ara-rigor-reviewer` | Evidence-linked ARA review; optional scoring when requested |
-| `research-supervisor` | Minimal router for research authority and specialist selection |
+| `research-supervisor` | Minimal router for current evidence and specialist selection |
 
 ### Diagramming
 | Skill | Purpose |
@@ -35,8 +32,9 @@ retain its CC Switch registration and managed source for reversible recovery,
 with all client enablement flags off. Do not route research requests through it.
 Research investigation uses `deep-research`, paper interpretation uses
 `paper-analyzer`, and experiment planning follows project evidence directly.
-ARA compilation, recording, and review are independent workflows, not a mandatory
-research pipeline. Existing project ledgers are not migrated by this update.
+The three ARA skills were retired from active use on 2026-09-25. Project
+experiments and research documents own current decisions; historical ARA
+records remain readable where a project preserves them.
 
 ## Install via cc-switch
 
@@ -66,9 +64,9 @@ The name in `SKILL.md` is the user-facing invocation name.
 | `weekly-attendance-check-in` | `weekly-attendance-check-in` | Current-unit discovery and verified weekly attendance submission |
 
 `academic-writing-assistant` remains the narrow academic language-editing entry.
-Existing ARA contracts and Typst artifact checks remain authoritative. New ARA
-compilation uses source-bounded coverage without quantity quotas. ARA recording
-requires a selected ledger and user or project authorization.
+Project-specific research contracts and Typst artifact checks remain
+authoritative. Historical research records are evidence to verify against
+current experiments, not automatic instructions for a new route.
 
 See [source provenance](docs/skill-provenance.md) for upstream attribution and
 which components are original instructions rather than redistributed bundles.
