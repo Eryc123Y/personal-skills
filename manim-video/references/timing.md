@@ -49,8 +49,21 @@ Use the first option that applies; none of these needs a GPU.
 | Option | When | How |
 |---|---|---|
 | Host project's narration | the clip belongs to a film that already has a voice | reuse its pipeline and timeline; never mix two voices in one film |
-| Gemini 3.8 TTS (`gemini-3.8-flash-lite-tts`, or `gemini-3.8-flash-tts` for more nuance) | default for finished narration, Chinese or English; needs `GEMINI_API_KEY` | `python <skill>/scripts/tts_gemini.py lines.txt voice/` then `timings.py audio`. Set `VOICE` (default `Charon`) and `STYLE` (delivery instruction). Verified 2026-10-05: 18/18 English lines first try |
+| Gemini 3.8 TTS (`gemini-3.8-flash-lite-tts`, or `gemini-3.8-flash-tts` for more nuance) | default for finished narration, Chinese or English; needs `GEMINI_API_KEY` | `python <skill>/scripts/tts_gemini.py lines.txt voice/` then `timings.py audio`. Set `VOICE` (default `Charon`); leave `STYLE` empty or a few words (long style text makes the voice drift). Verified 2026-10-05 in English and Chinese |
 | edge-tts | drafts without a key, or when the API is unavailable | `uvx edge-tts --voice en-US-AndrewNeural` / `zh-CN-YunxiNeural --text "..." --write-media NN_id.mp3` per line |
+
+Requests, not seconds, are the scarce TTS resource: the API limits requests
+per model per day (100 on the project this skill was built with), whatever
+the audio length. `tts_gemini.py` therefore reads one lines file (a chapter)
+in as few requests as possible: lines are joined with `<long pause>` tags,
+and the returned audio is cut back into one file per line at its longest
+silences, with a sanity check on each piece's length; an unverifiable chunk
+falls back to one request per line. A 100-line film takes about one request
+per chapter. Over the daily quota the script stops at once and prints the
+wait; the files already written are kept, so a later re-run continues.
+`--per-line` restores one request per line (useful to redo single lines).
+Check a cut by transcribing a few pieces (any Gemini text model accepts
+audio) before trusting a new language or voice.
 
 Pace: Gemini's Charon voice reads English at about 120–125 words per minute,
 calmer than many explainers. For a brisker read, ask for it in `STYLE`, or

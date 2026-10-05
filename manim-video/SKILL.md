@@ -61,7 +61,8 @@ verified Manim facts.
 - `templates/timed_scene.py`: `TimedScene` (`say`, `beat`, `at`, `hold`,
   `until`, `finish`), `PALETTE`, `CJK_FONT`, `cjk_tex()`.
 - `scripts/doctor.py`: toolchain check (Manim, ffmpeg, TeX, ctex, CJK font).
-- `scripts/tts_gemini.py`: one narration file per line via Gemini TTS; voice
+- `scripts/tts_gemini.py`: one narration file per line via Gemini TTS, using
+  about one request per chapter (daily request quotas); voice
   choice is in `references/timing.md`.
 - `scripts/timings.py`: timings (with in-sentence pauses) from per-line audio,
   or text estimates; `show` prints pauses beside phrases for choosing beats.
