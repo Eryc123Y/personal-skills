@@ -1,0 +1,4 @@
+interface:
+  display_name: "Manim Video"
+  short_description: "Narration-timed Manim explainers with verified frames"
+  default_prompt: "Use $manim-video to plan, time, render, and visually verify a narrated Manim CE explainer clip."

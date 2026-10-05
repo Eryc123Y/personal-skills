@@ -20,6 +20,11 @@ this repository is their versioned source.
 |---|---|
 | `typst-writer` | Eric's Typst workflow: Scholia notes, Monash Touying slides, native math, and editable diagrams |
 
+### Video
+| Skill | Purpose |
+|---|---|
+| `manim-video` | Narration-timed Manim CE explainers with Chinese/LaTeX support and verified frames |
+
 ### Course Operations
 | Skill | Purpose |
 |---|---|
