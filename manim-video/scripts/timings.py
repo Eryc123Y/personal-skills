@@ -6,8 +6,9 @@
 
     timings.py audio lines.txt --audio-dir voice/ -o timings/taylor.json [--gap 0.35]
         Real timings from one audio file per line (sorted by name, one per line of
-        lines.txt). Measures each with ffprobe and writes the concatenated
-        narration, with the gaps, next to the timings file as <clip>.wav.
+        lines.txt). Measures each with ffprobe, records the pauses inside each
+        line (phrase boundaries for mid-sentence beats), and writes the
+        concatenated narration, with the gaps, next to the timings file as <clip>.wav.
 
 lines.txt holds one narration segment per non-empty line, either "id | text"
 or plain text (ids become s01, s02, ...). Lines starting with # are ignored.
@@ -58,10 +59,25 @@ def probe_duration(path: Path) -> float:
     return float(out)
 
 
-def layout(rows, durations, gap: float) -> list[dict]:
+def speech_pauses(path: Path, duration: float) -> list[list[float]]:
+    """Silences inside a clip (edge silence excluded), seconds from the clip start.
+
+    Phrase boundaries are where mid-sentence beats belong (`TimedScene.at`).
+    """
+    log = subprocess.run(["ffmpeg", "-i", str(path), "-af", "silencedetect=n=-45dB:d=0.15", "-f", "null", "-"],
+                         capture_output=True, text=True, check=True).stderr
+    starts = [float(x) for x in re.findall(r"silence_start: ([0-9.]+)", log)]
+    ends = [float(x) for x in re.findall(r"silence_end: ([0-9.]+)", log)]
+    return [[round(s, 2), round(e, 2)] for s, e in zip(starts, ends) if s > 0.05 and e < duration - 0.05]
+
+
+def layout(rows, durations, gap: float, pauses=None) -> list[dict]:
     segments, t = [], 0.0
-    for (seg_id, text), dur in zip(rows, durations):
-        segments.append({"id": seg_id, "text": text, "start": round(t, 3), "end": round(t + dur, 3)})
+    for i, ((seg_id, text), dur) in enumerate(zip(rows, durations)):
+        seg = {"id": seg_id, "text": text, "start": round(t, 3), "end": round(t + dur, 3)}
+        if pauses:
+            seg["pauses"] = pauses[i]
+        segments.append(seg)
         t += dur + gap
     return segments
 
@@ -99,6 +115,7 @@ def main() -> None:
     rows = read_lines(args.lines)
     clip = args.out.stem
     payload = {"clip": clip}
+    pauses = None
     if args.mode == "estimate":
         durations = [max(1.2, spoken_units(text) / args.cps) for _, text in rows]
         payload["estimated"] = True
@@ -109,12 +126,13 @@ def main() -> None:
         if len(files) != len(rows):
             raise SystemExit(f"{len(rows)} lines but {len(files)} audio files in {args.audio_dir}")
         durations = [probe_duration(f) for f in files]
+        pauses = [speech_pauses(f, d) for f, d in zip(files, durations)]
         voice = args.out.with_suffix(".wav")
         args.out.parent.mkdir(parents=True, exist_ok=True)
         concat_audio(files, args.gap, voice)
         payload["audio"] = voice.name
 
-    segments = layout(rows, durations, args.gap)
+    segments = layout(rows, durations, args.gap, pauses)
     payload["duration"] = round(segments[-1]["end"] + args.tail, 3)
     payload["segments"] = segments
     args.out.parent.mkdir(parents=True, exist_ok=True)

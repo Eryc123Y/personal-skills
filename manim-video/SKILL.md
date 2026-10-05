@@ -34,9 +34,10 @@ verified Manim facts.
    timings file from real audio (`scripts/timings.py`, or an adapter from the
    host timeline). Estimated timings are only for layout drafts.
 3. **Code.** Copy `templates/timed_scene.py` next to the scene file. Subclass
-   `TimedScene`, with one class per chapter. Place beats with `say(id)` and
-   give every animation an explicit `run_time`. Never hand-sum durations into
-   `wait()` calls.
+   `TimedScene`, with one class per chapter. Place beats with `say(id)`, and
+   mid-sentence beats with `at(offset)` at the recorded pauses. Give every
+   animation an explicit `run_time`. Never hand-sum durations into `wait()`
+   calls.
 4. **Preview.** `manim -ql --dry_run`, then `manim -ql --disable_caching`.
 5. **Look.** `scripts/check_frames.py` extracts frames at every segment
    boundary. Read them, fix, and re-render only the affected classes.
@@ -55,8 +56,11 @@ verified Manim facts.
 
 ## Bundled resources
 
-- `templates/timed_scene.py`: `TimedScene` (`say`, `hold`, `until`,
+- `templates/timed_scene.py`: `TimedScene` (`say`, `at`, `hold`, `until`,
   `finish`), `PALETTE`, `CJK_FONT`, `cjk_tex()`.
 - `scripts/doctor.py`: toolchain check (Manim, ffmpeg, TeX, ctex, CJK font).
-- `scripts/timings.py`: timings from per-line audio or text estimates.
+- `scripts/tts_gemini.py`: one narration file per line via Gemini TTS; voice
+  choice is in `references/timing.md`.
+- `scripts/timings.py`: timings (with in-sentence pauses) from per-line audio,
+  or text estimates.
 - `scripts/check_frames.py`: boundary frames, contact sheet, duration check.

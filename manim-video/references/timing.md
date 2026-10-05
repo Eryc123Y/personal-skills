@@ -38,8 +38,25 @@ Prefer what the host project already has:
    measures each file and writes the concatenated `<clip>.wav`.
 3. **No audio yet.** `scripts/timings.py estimate lines.txt -o timings/<clip>.json`
    gives draft timings (about 4.2 Chinese characters per second) for layout
-   work. For a quick real voice: `uvx edge-tts --voice zh-CN-YunxiNeural --text "..." --write-media 01.mp3`
-   per line, then mode 2.
+   work. Replace them with real audio before the final render.
+
+## Choosing a voice
+
+Use the first option that applies; none of these needs a GPU.
+
+| Option | When | How |
+|---|---|---|
+| Host project's narration | the clip belongs to a film that already has a voice | reuse its pipeline and timeline; never mix two voices in one film |
+| Gemini 3.8 TTS (`gemini-3.8-flash-lite-tts`, or `gemini-3.8-flash-tts` for more nuance) | default for finished narration, Chinese or English; needs `GEMINI_API_KEY` | `python <skill>/scripts/tts_gemini.py lines.txt voice/` then `timings.py audio`. Set `VOICE` (default `Charon`) and `STYLE` (delivery instruction). Verified 2026-10-05: 18/18 English lines first try |
+| edge-tts | drafts without a key, or when the API is unavailable | `uvx edge-tts --voice en-US-AndrewNeural` / `zh-CN-YunxiNeural --text "..." --write-media NN_id.mp3` per line |
+
+Write numbers, symbols and formulas in lines.txt the way they should be
+spoken ("one point five seven", "h squared"), not as digits or LaTeX. Read
+every number on screen against the narration that names it.
+
+A local or GPU model (for example a larger open TTS on Colab) is only worth
+it when the API voices are unsuitable; load the model once and synthesise
+every line in the same process.
 
 When narration changes, regenerate timings first, then update the code.
 Segment ids that still exist keep their scene code.
@@ -51,6 +68,7 @@ Segment ids that still exist keep their scene code.
 | Call | Effect |
 |---|---|
 | `self.say("id")` | holds until the segment starts, then attaches its subtitle |
+| `self.at(2.4)` | holds until 2.4 s into the current segment, a mid-sentence beat |
 | `self.hold("id")` | holds until the segment ends |
 | `self.until(t)` | holds until clip time `t` |
 | `self.finish()` | holds until the clip's `duration` |
@@ -68,6 +86,13 @@ run_times by hand and compute `wait(budget - spent)`:
   and keep going, so one render lists every late beat; final renders raise
   when a beat is more than `OVERRUN_LIMIT` (0.3 s) late. `finish()` logs a
   summary of all late beats.
+
+Placing beats inside a sentence: `timings.py audio` stores each segment's
+`pauses` (`[start, end]` seconds into the segment). A phrase starts at the end
+of a pause, so put `self.at(pause_end)` before the animation that shows what
+that phrase names. A segment-level anchor alone lets an element appear seconds
+before its word is spoken; checking beats against pauses caught about twenty early
+beats in a 2.5-minute clip.
 
 Fitting a beat into its segment: the animations between two anchors must fit
 in the time available. Trim `run_time`s or move a beat to the next segment.

@@ -34,6 +34,15 @@ The two share names but not APIs. Training data and many examples mix them.
   `ParametricFunction`), plus `discontinuities=[...]` where the function jumps.
 - Animations are rounded to whole frames (see timing.md). Low-quality previews
   (15 fps) and finals (60 fps) differ by up to one frame per animation.
+- Two animations on the same mobject in one `play` fight: `FadeIn(m)` together
+  with `Indicate(m)` ends with `m` invisible. Fade in first, then indicate.
+- `group.animate.scale(k)` scales positions about the group centre, so dots on
+  a curve drift off it. Scale members individually:
+  `*[d.animate.scale(k) for d in group]`.
+- Format numbers with rounding (`f"{v:.4f}"`), never by slicing strings:
+  `"1.570796"[:6]` shows 1.5707, a wrong value.
+- A computed `wait` shorter than one frame is padded to a whole frame with a
+  warning; `TimedScene.until` skips such gaps.
 - A crashed render leaves `partial_movie_files/`. Locate outputs by their exact
   path `media/videos/<file>/<quality>/<Scene>.mp4`, never by globbing `*.mp4`.
 - `--disable_caching` avoids stale partials while iterating on one scene.

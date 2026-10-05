@@ -15,6 +15,7 @@ Usage:
         def construct(self):
             self.say("hook")                      # waits for the segment, adds its subtitle
             self.play(Write(title), run_time=1.2)
+            self.at(2.4)                          # 2.4 s into "hook", when the key word is spoken
             self.say("map")                       # pads to the next segment's start
             ...
             self.finish()                         # pads to the clip's duration
@@ -94,6 +95,7 @@ class TimedScene(Scene):
         self.segments, self.clip_duration = load_timings(self.TIMINGS)
         self.camera.background_color = PALETTE["bg"]
         self._t0 = self.time
+        self.current: Segment | None = None
         self.overruns: list[tuple[str, float]] = []
 
     @property
@@ -104,7 +106,7 @@ class TimedScene(Scene):
     def until(self, t: float, label: str = "") -> None:
         """Hold the current frame until clip time ``t``."""
         gap = t - self.clock
-        if gap > 1e-6:
+        if gap >= 1 / config.frame_rate:   # sub-frame waits would be padded to a whole frame
             self.wait(gap)
         elif -gap > FRAME_TOLERANCE:
             self.on_overrun(label or f"t={t:.2f}", -gap)
@@ -115,7 +117,12 @@ class TimedScene(Scene):
         self.until(seg.start, label=f"before {seg_id}")
         if self.SUBTITLES and seg.text:
             self.add_subcaption(seg.text, duration=seg.duration)
+        self.current = seg
         return seg
+
+    def at(self, offset: float) -> None:
+        """Hold until ``offset`` seconds into the current segment (a beat mid-sentence)."""
+        self.until(self.current.start + offset, label=f"{self.current.id}+{offset:g}s")
 
     def hold(self, seg_id: str) -> None:
         """Pad to the end of a segment (use when the next beat should not start early)."""
