@@ -3,7 +3,8 @@
 Every segment time comes from a timings file (see references/timing.md):
 
     {"clip": "taylor", "audio": "voice.wav", "duration": 41.2,
-     "segments": [{"id": "hook", "text": "...", "start": 0.0, "end": 3.4}, ...]}
+     "segments": [{"id": "hook", "text": "...", "start": 0.0, "end": 3.4,
+                   "pauses": [[1.2, 1.5], [2.3, 2.6]]}, ...]}
 
 Usage:
 
@@ -15,7 +16,7 @@ Usage:
         def construct(self):
             self.say("hook")                      # waits for the segment, adds its subtitle
             self.play(Write(title), run_time=1.2)
-            self.at(2.4)                          # 2.4 s into "hook", when the key word is spoken
+            self.beat(0)                          # after the first pause in "hook": the next phrase starts
             self.say("map")                       # pads to the next segment's start
             ...
             self.finish()                         # pads to the clip's duration
@@ -65,6 +66,7 @@ class Segment:
     text: str
     start: float
     end: float
+    pauses: tuple[tuple[float, float], ...] = ()   # silences inside the line, seconds from its start
 
     @property
     def duration(self) -> float:
@@ -73,7 +75,8 @@ class Segment:
 
 def load_timings(path: str | Path) -> tuple[dict[str, Segment], float]:
     data = json.loads(Path(path).read_text(encoding="utf-8"))
-    segments = [Segment(s["id"], s.get("text", ""), float(s["start"]), float(s["end"]))
+    segments = [Segment(s["id"], s.get("text", ""), float(s["start"]), float(s["end"]),
+                        tuple((float(a), float(b)) for a, b in s.get("pauses", [])))
                 for s in data["segments"]]
     ids = [s.id for s in segments]
     if len(set(ids)) != len(ids):
@@ -123,6 +126,17 @@ class TimedScene(Scene):
     def at(self, offset: float) -> None:
         """Hold until ``offset`` seconds into the current segment (a beat mid-sentence)."""
         self.until(self.current.start + offset, label=f"{self.current.id}+{offset:g}s")
+
+    def beat(self, k: int, delay: float = 0.0) -> None:
+        """Hold until pause ``k`` of the current segment ends, when its next phrase begins.
+
+        Prefer this to at(seconds): pause indices survive re-recording or a tempo
+        change of the narration, hard-coded offsets do not.
+        """
+        pauses = self.current.pauses
+        if k >= len(pauses):
+            raise IndexError(f"{self.current.id} has {len(pauses)} pauses; beat({k}) requested")
+        self.until(self.current.start + pauses[k][1] + delay, label=f"{self.current.id} beat {k}")
 
     def hold(self, seg_id: str) -> None:
         """Pad to the end of a segment (use when the next beat should not start early)."""

@@ -12,8 +12,10 @@ Ask only what the request and the project leave open:
   If there are two, there are two videos.
 - **Audience**: what they already know (school algebra, first-year calculus …).
   Every symbol beyond that needs an on-screen definition.
-- **Length**: about 150 to 200 spoken Chinese characters per minute of a calm
-  explainer. A 3-minute piece teaches one idea well.
+- **Length**: about 150 to 200 spoken Chinese characters, or about 120 English
+  words, per minute of a calm explainer (Gemini's Charon voice reads English
+  at 120–125 wpm). Derivations need extra time on screen beyond the narration.
+  A 3-minute piece teaches one idea well.
 - **Form**: standalone video, or a clip inside a larger film (then match its
   resolution, frame rate, palette and narration voice).
 

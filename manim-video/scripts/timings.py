@@ -10,6 +10,10 @@
         line (phrase boundaries for mid-sentence beats), and writes the
         concatenated narration, with the gaps, next to the timings file as <clip>.wav.
 
+    timings.py show timings/taylor.json
+        Print each line's speech spans (numbered by the pause that precedes them)
+        next to its phrases, to choose TimedScene.beat(k) for mid-sentence beats.
+
 lines.txt holds one narration segment per non-empty line, either "id | text"
 or plain text (ids become s01, s02, ...). Lines starting with # are ignored.
 """
@@ -68,7 +72,8 @@ def speech_pauses(path: Path, duration: float) -> list[list[float]]:
                          capture_output=True, text=True, check=True).stderr
     starts = [float(x) for x in re.findall(r"silence_start: ([0-9.]+)", log)]
     ends = [float(x) for x in re.findall(r"silence_end: ([0-9.]+)", log)]
-    return [[round(s, 2), round(e, 2)] for s, e in zip(starts, ends) if s > 0.05 and e < duration - 0.05]
+    return [[round(s, 2), round(e, 2)] for s, e in zip(starts, ends)
+            if s > 0.05 and e < duration - 0.05 and e - s >= 0.05]
 
 
 def layout(rows, durations, gap: float, pauses=None) -> list[dict]:
@@ -101,7 +106,24 @@ def concat_audio(files: list[Path], gap: float, out: Path) -> None:
                         "-c", "copy", str(out)], check=True)
 
 
+def show(path: Path) -> None:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    for seg in data["segments"]:
+        dur = seg["end"] - seg["start"]
+        edges = [0.0] + [x for p in seg.get("pauses", []) for x in p] + [dur]
+        print(f"{seg['id']}  [{seg['start']:.2f}-{seg['end']:.2f}]")
+        for i in range(0, len(edges), 2):
+            label = "start  " if i == 0 else f"beat({i // 2 - 1})"
+            print(f"    {label} speech {edges[i]:5.2f}-{edges[i + 1]:5.2f}")
+        for phrase in (x.strip() for x in re.split(r"(?<=[,.:;?!，。：；？！])\s*", seg["text"])):
+            if phrase:
+                print(f"    | {phrase}")
+
+
 def main() -> None:
+    if len(sys.argv) == 3 and sys.argv[1] == "show":
+        show(Path(sys.argv[2]))
+        return
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("mode", choices=["estimate", "audio"])
     ap.add_argument("lines", type=Path)

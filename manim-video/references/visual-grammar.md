@@ -41,6 +41,24 @@ Dim context instead of removing it: `set_opacity(0.25)` on surrounding parts
 - **Term tour.** To explain a formula part by part: dim the rest, color and
   frame the current part, narrate it, restore, move to the next part.
 
+## Code on screen
+
+Show code as an editor would, not as plain monospace text:
+
+- Prefer real, runnable code over pseudocode, and run it (for example in the
+  project's verification script) so what is on screen is known to work.
+- Use Manim's `Code`: `Code(code_string=src, language="python",
+  formatter_style="one-dark", background="window",
+  paragraph_config={"font": "JetBrains Mono", "font_size": 24, "line_spacing": 0.85})`.
+  This gives syntax colours, line numbers and window chrome. `one-dark` sits
+  well on the default dark palette; dim `code.line_numbers` to about 0.45.
+- Walk through it with a current-line bar: a translucent `FOCUS` rectangle
+  (fill opacity about 0.13, no stroke) spanning the window, layered between
+  the background and the text (`code.code_lines.set_z_index(2)`, bar at 1).
+  Move it with the narration and dim the other lines to about 0.35.
+- Keep lines short (about 75 characters) and the block under about 12 lines;
+  `fit_width` it to about 12.6 units and check legibility on a 1080p frame.
+
 ## Endings
 
 Close each scene on a frame that makes sense frozen: the result alone, or the

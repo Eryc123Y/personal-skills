@@ -75,8 +75,11 @@ def main() -> None:
     expected = float(timings.get("duration", timings["segments"][-1]["end"]))
     has_audio = bool(ffprobe(args.video, "stream=codec_type", "a"))
     print(f"frames: {len(frames)} in {args.out} (contact.png, {cols} columns)")
-    print(f"video {duration:.2f}s vs timings {expected:.2f}s (diff {duration - args.offset - expected:+.2f}s); "
-          f"audio stream: {'yes' if has_audio else 'no'}")
+    if args.offset:   # a chapter inside a longer film: the totals are not comparable
+        print(f"clip at {args.offset:.2f}s inside a {duration:.2f}s video; audio stream: {'yes' if has_audio else 'no'}")
+    else:
+        print(f"video {duration:.2f}s vs timings {expected:.2f}s (diff {duration - expected:+.2f}s); "
+              f"audio stream: {'yes' if has_audio else 'no'}")
 
 
 if __name__ == "__main__":

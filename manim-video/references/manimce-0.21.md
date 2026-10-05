@@ -43,6 +43,25 @@ The two share names but not APIs. Training data and many examples mix them.
   `"1.570796"[:6]` shows 1.5707, a wrong value.
 - A computed `wait` shorter than one frame is padded to a whole frame with a
   warning; `TimedScene.until` skips such gaps.
+- Axis arrowheads default to 0.35 units, which looks oversized at 1080p. Pass
+  `axis_config={"tip_width": 0.16, "tip_height": 0.16, ...}`, defined once and
+  shared by every plot in the film.
+- A `Text` bounding box starts at the first glyph, so leading spaces vanish
+  when lines are aligned (pseudocode loses its indentation; no-break spaces do
+  not help). Use the `Code` mobject (see visual-grammar.md, "Code on screen"),
+  which keeps indentation. `Code` exposes `code_lines`, `line_numbers` (both
+  `Paragraph`s, indexed by line) and the background as `submobjects[0]`.
+- To clear part of a scene, fade out mobjects you tracked in a `VGroup`. A
+  `FadeOut` over a list filtered from `self.mobjects` once left objects behind
+  (they reappeared after the fade); check a frame after any partial clear.
+- Parallel renders that share `media/` race on `media/Tex`: one process
+  deletes the other's intermediate files and fails with "does not support
+  converting .dvi files to SVG". Render once serially (or `--dry_run`) to fill
+  the formula cache before rendering chapters in parallel, or give each
+  process its own `--media_dir`.
+- Manim's logger wraps long lines at the terminal width, which splits
+  "visuals … late at …" warnings in captured logs. Set `COLUMNS=250` when
+  redirecting a render's output to a file you will grep.
 - A crashed render leaves `partial_movie_files/`. Locate outputs by their exact
   path `media/videos/<file>/<quality>/<Scene>.mp4`, never by globbing `*.mp4`.
 - `--disable_caching` avoids stale partials while iterating on one scene.
