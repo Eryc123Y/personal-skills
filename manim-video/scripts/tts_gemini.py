@@ -178,22 +178,58 @@ def silences(pcm: np.ndarray, threshold_db: float = -40.0, min_len: float = 0.25
     return spans
 
 
+def _cuts_dp(inner, expected, total):
+    """Choose one silence per line boundary, in order: each boundary prefers a long silence close to where the
+    text says it should fall (cumulative expected length, scaled to the real total). Dynamic programming over
+    (boundary, silence); returns the chosen silences or None."""
+    k = len(expected) - 1
+    if k == 0:
+        return []
+    cum = np.cumsum(expected)[:-1] / np.sum(expected) * total
+    n = len(inner)
+    if n < k:
+        return None
+    mids = np.array([(a + b) / 2 for a, b in inner])
+    lens = np.array([b - a for a, b in inner])
+    spread = max(1.5, 0.06 * total)                      # how far a boundary may sit from its estimate
+    score = lambda j, i: 2.0 * min(lens[i], 1.2) - abs(mids[i] - cum[j]) / spread
+    best = np.full((k, n), -np.inf)
+    back = np.zeros((k, n), dtype=int)
+    for i in range(n):
+        best[0, i] = score(0, i)
+    for j in range(1, k):
+        run, arg = -np.inf, -1
+        for i in range(n):
+            if i - 1 >= 0 and best[j - 1, i - 1] > run:
+                run, arg = best[j - 1, i - 1], i - 1
+            if arg >= 0:
+                best[j, i] = run + score(j, i)
+                back[j, i] = arg
+    i = int(np.argmax(best[k - 1]))
+    if not np.isfinite(best[k - 1, i]):
+        return None
+    chosen = [i]
+    for j in range(k - 1, 0, -1):
+        i = int(back[j, i])
+        chosen.append(i)
+    return [inner[i] for i in reversed(chosen)]
+
+
 def split(pcm: np.ndarray, texts: list[str]) -> list[np.ndarray] | None:
-    """Cut a chunk at its len(texts)-1 longest inner silences; None if the result looks wrong."""
+    """Cut a chunk into len(texts) lines at silences chosen by _cuts_dp; None if the result looks wrong."""
     total = len(pcm) / RATE
     inner = [s for s in silences(pcm) if s[0] > 0.05 and s[1] < total - 0.05]
-    k = len(texts) - 1
-    if len(inner) < k:
+    exp = np.array([expected_seconds(t) for t in texts])
+    cuts = _cuts_dp(inner, exp, total)
+    if cuts is None:
         return None
-    cuts = sorted(sorted(inner, key=lambda s: s[1] - s[0], reverse=True)[:k])
-    if k and min(b - a for a, b in cuts) < 0.45:      # a <long pause> is clearly longer than a comma
+    if cuts and min(b - a for a, b in cuts) < 0.3:       # a line break is always a clear pause
         return None
     edges = [0.0] + [x for a, b in cuts for x in (a + 0.08, b - 0.08)] + [total]
     pieces = [pcm[int(edges[2 * i] * RATE): int(edges[2 * i + 1] * RATE)] for i in range(len(texts))]
-    exp = np.array([expected_seconds(t) for t in texts])
     got = np.array([len(p) / RATE for p in pieces])
     ratio = (got / got.sum()) / (exp / exp.sum())
-    if np.any(ratio < 0.45) or np.any(ratio > 2.2):   # a pause fell inside a line, or two lines merged
+    if np.any(ratio < 0.5) or np.any(ratio > 2.0):    # a cut fell inside a line, or two lines merged
         return None
     return [trim(p) for p in pieces]
 

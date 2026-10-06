@@ -60,7 +60,8 @@ audio costs 25 tokens per second, so about 655 s per request. `tts_gemini.py`
 therefore joins lines with `<long pause>` tags into even chunks of about five
 minutes of real speech (`TTS_CHUNK_SECONDS`, default 480 nominal seconds),
 breaking only between slides (ids `A0-03.2` belong to slide `A0-03`), and cuts
-the returned audio back into one file per line at its longest silences, with
+the returned audio back into one file per line, each cut at a clear silence near
+where the text says the line ends (dynamic programming over boundaries), with
 a sanity check on each piece's length.
 
 Long reads also keep the voice even: every request settles pitch, pace and
