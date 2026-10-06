@@ -179,34 +179,31 @@ def silences(pcm: np.ndarray, threshold_db: float = -40.0, min_len: float = 0.25
 
 
 def _cuts_dp(inner, expected, total):
-    """Choose one silence per line boundary, in order: each boundary prefers a long silence close to where the
-    text says it should fall (cumulative expected length, scaled to the real total). Dynamic programming over
-    (boundary, silence); returns the chosen silences or None."""
+    """One silence per line boundary, in order. Each line's length (between its chosen pauses) should match its
+    expected length scaled to the real total; long pauses are preferred. Judging every line on its own length,
+    not on a cumulative position, keeps a slow or fast stretch of reading from shifting all later cuts."""
     k = len(expected) - 1
     if k == 0:
         return []
-    cum = np.cumsum(expected)[:-1] / np.sum(expected) * total
     n = len(inner)
     if n < k:
         return None
     mids = np.array([(a + b) / 2 for a, b in inner])
-    lens = np.array([b - a for a, b in inner])
-    spread = max(1.5, 0.06 * total)                      # how far a boundary may sit from its estimate
-    score = lambda j, i: 2.0 * min(lens[i], 1.2) - abs(mids[i] - cum[j]) / spread
+    bonus = 2.0 * np.minimum([b - a for a, b in inner], 1.2)
+    exp = np.asarray(expected) * total / np.sum(expected)
+    fit = lambda length, j: -3.0 * abs(np.log(max(length, 0.05) / exp[j]))
     best = np.full((k, n), -np.inf)
     back = np.zeros((k, n), dtype=int)
-    for i in range(n):
-        best[0, i] = score(0, i)
+    best[0] = bonus + [fit(m, 0) for m in mids]
     for j in range(1, k):
-        run, arg = -np.inf, -1
-        for i in range(n):
-            if i - 1 >= 0 and best[j - 1, i - 1] > run:
-                run, arg = best[j - 1, i - 1], i - 1
-            if arg >= 0:
-                best[j, i] = run + score(j, i)
-                back[j, i] = arg
-    i = int(np.argmax(best[k - 1]))
-    if not np.isfinite(best[k - 1, i]):
+        for i in range(j, n):
+            prev = best[j - 1, :i] + [fit(mids[i] - mids[p], j) for p in range(i)]
+            p = int(np.argmax(prev))
+            best[j, i] = prev[p] + bonus[i]
+            back[j, i] = p
+    last = best[k - 1] + [fit(total - m, k) for m in mids]
+    i = int(np.argmax(last))
+    if not np.isfinite(last[i]):
         return None
     chosen = [i]
     for j in range(k - 1, 0, -1):
@@ -398,8 +395,11 @@ def batch_run(key, groups, path, state_file: Path, wait_min: float) -> list[list
     failed = []
     for k, g in enumerate(state["chunks"]):
         r = by_key.get(f"chunk-{k}")
-        pieces = split(audio_of(r), [t for _, _, t in g]) if r else None
+        pcm = audio_of(r) if r else None
+        pieces = split(pcm, [t for _, _, t in g]) if r else None
         if pieces is None:
+            if pcm is not None:                          # kept for a look at why the pauses did not fit
+                write_wav(state_file.parent / f".failed-{g[0][1]}.wav", pcm)
             failed.append([tuple(x) for x in g])
             continue
         for (i, seg_id, _), piece in zip(g, pieces):
