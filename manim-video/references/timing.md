@@ -52,16 +52,33 @@ Use the first option that applies; none of these needs a GPU.
 | Gemini 3.8 TTS (`gemini-3.8-flash-lite-tts`, or `gemini-3.8-flash-tts` for more nuance) | default for finished narration, Chinese or English; needs `GEMINI_API_KEY` | `python <skill>/scripts/tts_gemini.py lines.txt voice/` then `timings.py audio`. Set `VOICE` (default `Charon`); leave `STYLE` empty or a few words (long style text makes the voice drift). Verified 2026-10-05 in English and Chinese |
 | edge-tts | drafts without a key, or when the API is unavailable | `uvx edge-tts --voice en-US-AndrewNeural` / `zh-CN-YunxiNeural --text "..." --write-media NN_id.mp3` per line |
 
-Requests, not seconds, are the scarce TTS resource: the API limits requests
-per model per day (100 on the project this skill was built with), whatever
-the audio length. `tts_gemini.py` therefore reads one lines file (a chapter)
-in as few requests as possible: lines are joined with `<long pause>` tags,
-and the returned audio is cut back into one file per line at its longest
-silences, with a sanity check on each piece's length; an unverifiable chunk
-falls back to one request per line. A 100-line film takes about one request
-per chapter. Over the daily quota the script stops at once and prints the
-wait; the files already written are kept, so a later re-run continues.
-`--per-line` restores one request per line (useful to redo single lines).
+Requests, not seconds, are the scarce TTS resource. Limits are per Google
+Cloud project and per model (requests per minute, input tokens per minute,
+requests per day; 100 a day on the project this skill was built with), never
+per second of audio. One request returns at most 16,384 output tokens, and
+audio costs 25 tokens per second, so about 655 s per request. `tts_gemini.py`
+therefore joins lines with `<long pause>` tags into even chunks of about five
+minutes of real speech (`TTS_CHUNK_SECONDS`, default 480 nominal seconds),
+breaking only between slides (ids `A0-03.2` belong to slide `A0-03`), and cuts
+the returned audio back into one file per line at its longest silences, with
+a sanity check on each piece's length.
+
+Long reads also keep the voice even: every request settles pitch, pace and
+tone afresh, so one request per line sounds the most uneven. An unverifiable
+chunk is therefore asked once more, then halved at a slide boundary; a line is
+read alone only as a last resort. After each run every line is measured
+(median pitch, voiced loudness, speaking rate) and lines far from the film's
+median are listed in `voice_check.tsv` (`--check` re-measures,
+`--redo-outliers` remakes them). Over the daily quota the script stops at once
+and prints the wait; files already written are kept, so a re-run continues.
+
+`--batch` sends the same chunks through the Batch API: half the price, a quota
+separate from the daily request cap, results within 24 hours (usually much
+sooner). The job is remembered in `OUT/.batch.json`; `--wait` sets how many
+minutes to poll before exiting, and re-running resumes the job. Batch does not
+change the sound, only cost, quota and waiting time. `--per-line` restores one
+request per line (useful to redo single lines). Verified 2026-10-06 against the
+Gemini API docs (rate limits, Flash-Lite TTS model card, Batch API).
 Check a cut by transcribing a few pieces (any Gemini text model accepts
 audio) before trusting a new language or voice.
 

@@ -7,11 +7,18 @@
 Requests are the scarce resource: the API counts requests per model per day
 (100 on the project this was built with), not audio length. So by default the
 lines of a file are read in as few requests as possible: consecutive lines are
-joined with `<long pause>` tags into chunks of at most CHUNK_SECONDS of speech
-(one chunk per chapter in practice; the output limit is ~10 min of audio), and
-each chunk's audio is cut back into one file per line at its longest silences.
-A chunk whose cut cannot be verified (wrong number of pauses, or a line far
-from its expected length) falls back to one request per line.
+joined with `<long pause>` tags into even chunks of about CHUNK_SECONDS of
+speech (TTS_CHUNK_SECONDS in nominal seconds, default 480, about 5 min of real
+speech; one request returns at most ~655 s),
+broken only between slides (ids like A0-03.2 belong to slide A0-03), and each
+chunk's audio is cut back into one file per line at its longest silences.
+A chunk whose cut cannot be verified is asked once more, then halved at a slide
+boundary: long reads keep the voice even, so a line is read alone only last.
+After a run every line is measured (pitch, loudness, speaking rate) and lines
+far from the film's median are listed in voice_check.tsv; --redo-outliers
+remakes them. --batch sends the chunks through the Batch API instead (half
+price, quota separate from the daily request cap, results within 24 h; the job
+is remembered in OUT/.batch.json, so re-running resumes it).
 
 Files are named NN_<id>.wav. Existing files are kept: a chunk is requested only
 when none of its lines exist yet; otherwise missing lines are made one by one
@@ -44,7 +51,10 @@ VOICE = os.environ.get("VOICE", "Charon")
 STYLE = os.environ.get("STYLE", "")
 ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 RATE = 24000                      # Gemini TTS output: 24 kHz mono 16-bit
-CHUNK_SECONDS = 240               # speech per request; well under the ~10 min output limit
+# Speech per request. One request returns at most 16,384 output tokens = 25 tokens per second of audio,
+# about 655 s; one long read keeps the voice most even, but very long reads can drift and are harder to cut.
+# Measured speech is ~1.5x faster than the nominal CPS below, so 480 nominal s is ~5 min of real audio.
+CHUNK_SECONDS = min(float(os.environ.get("TTS_CHUNK_SECONDS", "480")), 600.0)
 CPS = {"cjk": 3.0, "latin": 2.6}  # rough spoken units per second, only for chunking and checks
 CJK = re.compile(r"[㐀-鿿豈-﫿]")
 
@@ -83,26 +93,33 @@ def _is_daily(err: dict) -> bool:
     return "per_day" in text or "PerDay" in text
 
 
-def synth(key: str, text: str) -> bytes:
-    """One generateContent request; returns 16-bit mono PCM samples at RATE."""
+def request_body(text: str) -> dict:
     part: dict = {"text": text}
     if STYLE:
         part["speech_metadata"] = {"style": STYLE}
-    body = {
+    return {
         "contents": [{"parts": [part]}],
         "generationConfig": {
             "responseModalities": ["AUDIO"],
             "speechConfig": {"voiceConfig": {"prebuiltVoiceConfig": {"voiceName": VOICE}}},
         },
     }
+
+
+def audio_of(response: dict) -> np.ndarray:
+    return to_pcm(base64.b64decode(response["candidates"][0]["content"]["parts"][0]["inlineData"]["data"]))
+
+
+def synth(key: str, text: str) -> bytes:
+    """One generateContent request; returns 16-bit mono PCM samples at RATE."""
+    body = request_body(text)
     req = urllib.request.Request(ENDPOINT.format(model=MODEL), data=json.dumps(body).encode(),
                                  headers={"Content-Type": "application/json", "x-goog-api-key": key})
     for attempt in range(5):
         try:
             with urllib.request.urlopen(req, timeout=180) as resp:
                 payload = json.load(resp)
-            data = base64.b64decode(payload["candidates"][0]["content"]["parts"][0]["inlineData"]["data"])
-            return to_pcm(data)
+            return audio_of(payload)
         except urllib.error.HTTPError as exc:
             err = json.loads(exc.read() or b"{}").get("error", {})
             if exc.code == 429 and _is_daily(err):
@@ -189,32 +206,197 @@ def trim(pcm: np.ndarray, keep: float = 0.08) -> np.ndarray:
     return pcm[int(max(start, 0) * RATE): int(min(end, total) * RATE)]
 
 
-# ---------------------------------------------------------------- main
+# ---------------------------------------------------------------- voice consistency
+
+def profile(pcm: np.ndarray) -> tuple[float, float]:
+    """(median pitch in Hz, loudness of voiced frames in dBFS) from 40 ms frames; pitch by autocorrelation."""
+    hop, win = RATE // 100, RATE // 25
+    x = pcm.astype(np.float64) / 32768.0
+    f0s, levels = [], []
+    lo, hi = RATE // 320, RATE // 70                   # 70-320 Hz covers speaking voices
+    for start in range(0, len(x) - win, hop * 2):
+        fr = x[start:start + win]
+        rms = np.sqrt((fr ** 2).mean())
+        if rms < 0.01:
+            continue
+        fr = fr - fr.mean()
+        ac = np.correlate(fr, fr, "full")[win - 1:]
+        lag = lo + int(np.argmax(ac[lo:hi]))
+        if ac[lag] > 0.35 * ac[0]:                       # clearly periodic: a voiced frame
+            f0s.append(RATE / lag)
+            levels.append(20 * np.log10(rms))
+    if not f0s:
+        return float("nan"), float("nan")
+    return float(np.median(f0s)), float(np.median(levels))
+
+
+def check(rows, path, z_limit: float = 3.5) -> list[tuple[int, str, str]]:
+    """Measure every line (pitch, loudness, speaking rate) and flag lines far from the film's median
+    (robust z-score over the median absolute deviation). Writes voice_check.tsv next to the audio."""
+    stats = []
+    for i, seg_id, text in rows:
+        f = path(i, seg_id)
+        if not f.exists():
+            continue
+        with wave.open(str(f)) as w:
+            pcm = np.frombuffer(w.readframes(w.getnframes()), dtype="<i2")
+        f0, db = profile(pcm)
+        rate = expected_seconds(text) / max(len(pcm) / RATE, 0.1)   # >1 means faster than the nominal pace
+        stats.append((i, seg_id, text, f0, db, rate, len(pcm) / RATE))
+    if len(stats) < 5:
+        return []
+    cols = np.array([[s[3], s[4], s[5]] for s in stats])
+    med = np.nanmedian(cols, axis=0)
+    mad = np.nanmedian(np.abs(cols - med), axis=0) * 1.4826 + 1e-9
+    z = np.abs(cols - med) / mad
+    short = np.array([s_[6] < 2.5 for s_ in stats])
+    z[short, :2] = 0.0                                   # pitch and level are unreliable on very short lines
+    flagged = []
+    out = path(0, "x").parent / "voice_check.tsv"
+    with out.open("w", encoding="utf-8") as fh:
+        fh.write("line\tpitch_hz\tlevel_db\trate\tflag\n")
+        for s_, zz in zip(stats, z):
+            bad = bool(np.nanmax(zz) > z_limit)
+            fh.write(f"{s_[1]}\t{s_[3]:.0f}\t{s_[4]:.1f}\t{s_[5]:.2f}\t{'!' if bad else ''}\n")
+            if bad:
+                flagged.append(s_[:3])
+    print(f"voice check: median pitch {med[0]:.0f} Hz, level {med[1]:.1f} dB, rate x{med[2]:.2f}; "
+          f"{len(flagged)} of {len(stats)} lines flagged (see {out.name})")
+    for _, seg_id, _ in flagged:
+        print(f"  ! {seg_id}")
+    return flagged
+
+
+# ---------------------------------------------------------------- chunking
+
+def group_of(seg_id: str) -> str:
+    """Lines named like A0-03.2 belong to slide A0-03; chunks only break between slides."""
+    return seg_id.rsplit(".", 1)[0] if "." in seg_id else seg_id
+
 
 def chunks(rows: list[tuple[int, str, str]]) -> list[list[tuple[int, str, str]]]:
-    out, cur, secs = [], [], 0.0
+    """Even chunks of about CHUNK_SECONDS, broken only where the slide changes (unless one slide is longer)."""
+    total = sum(expected_seconds(r[2]) for r in rows)
+    n = max(1, int(np.ceil(total / CHUNK_SECONDS)))
+    target = total / n
+    out, cur = [], []
+    secs = lambda rs: sum(expected_seconds(r[2]) for r in rs)
     for row in rows:
-        s = expected_seconds(row[2])
-        if cur and secs + s > CHUNK_SECONDS:
+        new_group = not cur or group_of(row[1]) != group_of(cur[-1][1])
+        if cur and new_group and secs(cur) >= target:
             out.append(cur)
-            cur, secs = [], 0.0
+            cur = []
+        elif cur and secs(cur) + expected_seconds(row[2]) > CHUNK_SECONDS:
+            # full in the middle of a slide: cut at the last slide boundary inside the chunk, if there is one
+            cuts = [k for k in range(1, len(cur)) if group_of(cur[k][1]) != group_of(cur[k - 1][1])]
+            k = cuts[-1] if cuts else len(cur)
+            out.append(cur[:k])
+            cur = cur[k:]
         cur.append(row)
-        secs += s
     return out + ([cur] if cur else [])
 
+
+def halves(group):
+    """Split a chunk in two, at the slide boundary nearest its middle."""
+    mid = len(group) // 2
+    cuts = [k for k in range(1, len(group)) if group_of(group[k][1]) != group_of(group[k - 1][1])]
+    k = min(cuts, key=lambda c: abs(c - mid)) if cuts else mid
+    return group[:k], group[k:]
+
+
+# ---------------------------------------------------------------- batch mode
+
+API = "https://generativelanguage.googleapis.com/v1beta/"
+
+
+def _call(key: str, url: str, body: dict | None = None) -> dict:
+    req = urllib.request.Request(url, data=json.dumps(body).encode() if body is not None else None,
+                                 headers={"Content-Type": "application/json", "x-goog-api-key": key})
+    with urllib.request.urlopen(req, timeout=600) as resp:
+        return json.load(resp)
+
+
+def batch_run(key, groups, path, state_file: Path, wait_min: float) -> list[list[tuple[int, str, str]]]:
+    """Submit the chunks as one Batch API job (half price, its own quota), wait up to wait_min minutes, then write
+    the lines. The job name is kept in state_file, so a later run resumes instead of submitting again.
+    Returns the chunks whose audio could not be cut reliably (to be redone with ordinary requests)."""
+    if state_file.exists():
+        state = json.loads(state_file.read_text())
+    else:
+        todo = [g for g in groups if not any(path(i, s).exists() for i, s, _ in g)]
+        if not todo:
+            return []
+        reqs = [{"request": request_body(" <long pause> ".join(t for _, _, t in g)), "metadata": {"key": f"chunk-{k}"}}
+                for k, g in enumerate(todo)]
+        job = _call(key, f"{API}models/{MODEL}:batchGenerateContent",
+                    {"batch": {"display_name": state_file.parent.name, "input_config": {"requests": {"requests": reqs}}}})
+        state = {"name": job["name"], "chunks": todo}
+        state_file.write_text(json.dumps(state, ensure_ascii=False))
+        print(f"submitted batch {job['name']}: {len(todo)} chunk(s) to {MODEL}", flush=True)
+    t_end = time.time() + wait_min * 60
+    while True:
+        job = _call(key, API + state["name"])
+        st = job.get("metadata", {}).get("state", "")
+        if job.get("done"):
+            break
+        if time.time() > t_end:
+            print(f"batch {state['name']} is {st}; run the same command again later to collect it")
+            return []
+        time.sleep(60)
+    if not st.endswith("SUCCEEDED"):                    # BATCH_STATE_* in practice, JOB_STATE_* in older docs
+        state_file.unlink()                              # failed, cancelled or expired: nothing to collect
+        raise SystemExit(f"batch {state['name']} ended as {st}: {json.dumps(job.get('error', {}))[:300]}")
+    resp = job.get("response", {})
+    if "responsesFile" in resp:
+        url = f"https://generativelanguage.googleapis.com/download/v1beta/{resp['responsesFile']}:download?alt=media"
+        req = urllib.request.Request(url, headers={"x-goog-api-key": key})
+        with urllib.request.urlopen(req, timeout=600) as r:
+            items = [json.loads(l) for l in r.read().decode().splitlines() if l.strip()]
+    else:
+        items = resp.get("inlinedResponses", {})
+        items = items.get("inlinedResponses", items) if isinstance(items, dict) else items
+    by_key = {}
+    for k, it in enumerate(items):
+        name = (it.get("metadata") or {}).get("key") or it.get("key") or f"chunk-{k}"
+        by_key[name] = it.get("response")
+    failed = []
+    for k, g in enumerate(state["chunks"]):
+        r = by_key.get(f"chunk-{k}")
+        pieces = split(audio_of(r), [t for _, _, t in g]) if r else None
+        if pieces is None:
+            failed.append([tuple(x) for x in g])
+            continue
+        for (i, seg_id, _), piece in zip(g, pieces):
+            write_wav(path(i, seg_id), piece)
+        print(f"{g[0][1]}…{g[-1][1]}: {len(g)} lines from the batch", flush=True)
+    state_file.unlink()
+    return failed
+
+
+# ---------------------------------------------------------------- main
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("lines", type=Path)
     ap.add_argument("out", type=Path)
     ap.add_argument("--per-line", action="store_true", help="one request per line")
+    ap.add_argument("--batch", action="store_true", help="use the Batch API (half price, own quota, up to 24 h)")
+    ap.add_argument("--wait", type=float, default=90, help="minutes to wait for a batch before exiting (default 90)")
+    ap.add_argument("--check", action="store_true", help="only measure the existing lines and flag outliers")
+    ap.add_argument("--redo-outliers", action="store_true", help="delete flagged lines, then make them again")
     args = ap.parse_args()
-    key = os.environ.get("GEMINI_API_KEY")
-    if not key:
-        sys.exit("GEMINI_API_KEY is not set")
     args.out.mkdir(parents=True, exist_ok=True)
     rows = [(i, seg_id, text) for i, (seg_id, text) in enumerate(read_lines(args.lines), 1)]
     path = lambda i, seg_id: args.out / f"{i:02d}_{seg_id}.wav"
+    if args.check:
+        check(rows, path)
+        return
+    key = os.environ.get("GEMINI_API_KEY")
+    if not key:
+        sys.exit("GEMINI_API_KEY is not set")
+    if args.redo_outliers:
+        for i, seg_id, _ in check(rows, path):
+            path(i, seg_id).unlink()
     requests = 0
 
     def one_by_one(group):
@@ -225,23 +407,39 @@ def main() -> None:
                 requests += 1
                 print(f"{path(i, seg_id).name}: ok", flush=True)
 
-    groups = [[r] for r in rows] if args.per_line else chunks(rows)
-    for group in groups:
+    def as_chunk(group, depth=0):
+        """One request for the whole chunk; if its audio cannot be cut reliably, retry once, then halve it."""
+        nonlocal requests
         if len(group) == 1 or any(path(i, s).exists() for i, s, _ in group):
             one_by_one(group)
-            continue
+            return
         pcm = synth(key, " <long pause> ".join(text for _, _, text in group))
         requests += 1
         pieces = split(pcm, [text for _, _, text in group])
+        if pieces is None and depth == 0:
+            print(f"  {group[0][1]}…{group[-1][1]}: pauses unclear, asking once more", flush=True)
+            pcm = synth(key, " <long pause> ".join(text for _, _, text in group))
+            requests += 1
+            pieces = split(pcm, [text for _, _, text in group])
         if pieces is None:
-            print(f"  could not split the chunk {group[0][1]}…{group[-1][1]} reliably; "
-                  "falling back to one request per line", flush=True)
-            one_by_one(group)
-            continue
+            a, b = halves(group)
+            print(f"  {group[0][1]}…{group[-1][1]}: still unclear; splitting into two requests", flush=True)
+            as_chunk(a, depth + 1)
+            as_chunk(b, depth + 1)
+            return
         for (i, seg_id, _), piece in zip(group, pieces):
             write_wav(path(i, seg_id), piece)
         print(f"{group[0][1]}…{group[-1][1]}: {len(group)} lines from one request", flush=True)
-    print(f"done: {requests} request(s) to {MODEL}")
+
+    groups = [[r] for r in rows] if args.per_line else chunks(rows)
+    if args.batch and not args.per_line:
+        groups = batch_run(key, groups, path, args.out / ".batch.json", args.wait)
+        if not groups and any(not path(i, s).exists() for i, s, _ in rows):
+            return                                          # still waiting for the batch
+    for group in groups:
+        as_chunk(group)
+    print(f"done: {requests} ordinary request(s) to {MODEL}")
+    check(rows, path)
 
 
 if __name__ == "__main__":
