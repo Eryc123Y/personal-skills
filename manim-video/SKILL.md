@@ -32,7 +32,8 @@ verified Manim facts.
    scene-by-scene plan. Verify every number and identity that will appear.
 2. **Narration, then timings.** Write `lines.txt` (`id | text`) and build a
    timings file from real audio (`scripts/timings.py`, or an adapter from the
-   host timeline). Estimated timings are only for layout drafts.
+   host timeline). Listen back before timing (`scripts/verify_voice.py`).
+   Estimated timings are only for layout drafts.
 3. **Code.** Copy `templates/timed_scene.py` next to the scene file. Subclass
    `TimedScene`, with one class per chapter. Place beats with `say(id)`, and
    mid-sentence beats with `beat(k)` at the recorded pauses
@@ -65,6 +66,9 @@ verified Manim facts.
   about five minutes per request (daily request quotas, even voice), with a
   per-line voice check and an optional Batch API mode; voice choice and quota
   facts are in `references/timing.md`.
+- `scripts/verify_voice.py`: listens back to the narration: transcribes and judges every
+  line against the script (mis-cuts, misread numbers) and checks pitch-flagged lines
+  against their neighbours.
 - `scripts/timings.py`: timings (with in-sentence pauses) from per-line audio,
   or text estimates; `show` prints pauses beside phrases for choosing beats.
 - `scripts/check_frames.py`: boundary frames, contact sheet, duration check.

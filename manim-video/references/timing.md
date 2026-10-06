@@ -80,8 +80,20 @@ minutes to poll before exiting, and re-running resumes the job. Batch does not
 change the sound, only cost, quota and waiting time. `--per-line` restores one
 request per line (useful to redo single lines). Verified 2026-10-06 against the
 Gemini API docs (rate limits, Flash-Lite TTS model card, Batch API).
-Check a cut by transcribing a few pieces (any Gemini text model accepts
-audio) before trusting a new language or voice.
+After every run, listen back with `scripts/verify_voice.py lines.txt OUT_DIR`.
+A Gemini text model (separate quota) transcribes each line and judges it
+against its script line, ignoring notation, and plays every line flagged in
+`voice_check.tsv` between its neighbours to say whether it stands out. On a
+47-minute film it found what the pitch check cannot: two cuts one pause off
+(a phrase like "第四" at the end of the wrong line), a number read wrongly
+(35 as 3.5), and small rewordings. Its judgements can be wrong too: confirm a
+serious finding by transcribing that clip again before acting. Repairs, in
+order of preference: a phrase on the wrong side of a cut is moved across at
+the pause before it (no new request); a harmless rewording is fixed in the
+script so subtitles follow the voice; a wrong word or number is remade as one
+line, with the number written out in words if it was misread, then checked
+between its neighbours. Six of seven pitch-flagged lines fitted in by ear and
+were kept: lines that open a section or ask a question rise naturally.
 
 Pace: Gemini's Charon voice reads English at about 120–125 words per minute,
 calmer than many explainers. For a brisker read, ask for it in `STYLE`, or
