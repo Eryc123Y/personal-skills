@@ -1,5 +1,9 @@
 # Visual grammar
 
+References to narration below apply to narrated or speech-synchronized clips.
+For silent animations, follow the agreed visual sequence and pacing instead;
+do not add a voice track to satisfy a visual-design rule.
+
 Defaults, not a fixed house style. When a host project has a visual spec,
 palette or motion rules, those win; match them so the clip cuts in cleanly.
 

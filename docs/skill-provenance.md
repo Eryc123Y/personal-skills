@@ -18,7 +18,7 @@ historical upstream scripts, templates, prompts, or other resources:
   deliverables using capabilities available in the current host.
 - `weekly-attendance-check-in`: current-semester unit discovery and verified
   attendance submission from the user's authenticated Monash course sources.
-- `manim-video`: narration-timed Manim CE explainers. Three public Manim skills
+- `manim-video`: narrated, silent, and host-timed Manim CE animations. Three public Manim skills
   were reviewed as design references only; `manim-video/SOURCE.md` lists them.
 
 The historical installations were associated with `anthropics/skills`,

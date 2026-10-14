@@ -1,5 +1,10 @@
 # Timing: narration first, then code
 
+This reference applies to narration-synchronized work. Confirm the mode using
+the skill entrypoint first. Silent standalone animations use requested durations
+and visual pacing without these speech steps. Embedded clips reuse host cues;
+when those cues are not speech-based, do not invent narration to fit this schema.
+
 Visual timing is derived from real narration audio. Writing animations against
 guessed durations is the most common cause of audio/visual drift and full
 re-renders.
