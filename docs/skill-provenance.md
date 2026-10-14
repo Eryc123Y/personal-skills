@@ -31,7 +31,6 @@ and paper-craft resources are why those resources are not redistributed here.
 
 | Folder | Upstream | License and changes |
 |---|---|---|
-| `context7-auto-research` | [BenedictKing/context7-auto-research](https://github.com/BenedictKing/context7-auto-research) | MIT; narrower trigger and host-aware tool routing; retained helper |
 | `python-best-practices` | [alleneubank/claude-code](https://github.com/alleneubank/claude-code) (formerly `0xbigboss/claude-code`) | Apache-2.0; condensed implementation/review guidance |
 | `obsidian-second-brain` | [eugeniughelbur/obsidian-second-brain](https://github.com/eugeniughelbur/obsidian-second-brain) | MIT; scoped vault operations, adapted command entrypoints, reduced runtime dependencies |
 
@@ -39,6 +38,9 @@ Each adapted folder includes its license and `SOURCE.md`, which identify the
 upstream and describe the local changes. Preserve these notices when packaging
 skills. The `vibe-research-workflow` adaptation and its bundled references were
 removed on 2026-10-14; its historical source and license remain in Git history.
+The `context7-auto-research` wrapper and fallback helper were also removed on
+2026-10-14. Context7 remains available through the connected tool; no separate
+personal wrapper is maintained. Historical attribution remains in Git history.
 
 ## Repository-to-client verification
 

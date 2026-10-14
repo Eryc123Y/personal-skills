@@ -61,7 +61,6 @@ The name in `SKILL.md` is the user-facing invocation name.
 | `pptx` | `pptx-package-repair` | PPTX package and relationship inspection |
 | `skill-creator` | `skill-evaluation` | Bounded skill evaluation; ordinary authoring uses the host creator |
 | `deep-research` | `deep-research` | Evidence-led research with task-dependent depth and output |
-| `context7-auto-research` | `context7-auto-research` | Current library documentation when needed |
 | `python-best-practices` | `python-best-practices` | Proportionate Python implementation and review guidance |
 | `paper-analyzer` | `paper-analyzer` | Paper analysis scoped to the requested outcome |
 | `paper-comic` | `paper-comic` | Paper method illustrations |
