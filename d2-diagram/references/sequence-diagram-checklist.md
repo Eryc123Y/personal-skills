@@ -1,96 +1,78 @@
-# Sequence Diagram Checklist
+# Sequence diagrams
 
-Use this file before generating production-grade sequence diagrams.
+Use `shape: sequence_diagram` for time-ordered interactions. D2 has specialized
+sequence layout and scoping; do not simulate it with an ordinary graph.
 
-Primary references:
-- D2 official sequence diagram docs: https://d2lang.com/tour/sequence-diagrams/
-- UML 2.5.1 spec: https://www.omg.org/spec/UML/2.5.1/PDF
+References: [D2 sequences](https://d2lang.com/tour/sequence-diagrams/),
+[D2 arrowheads](https://d2lang.com/tour/connections/),
+[UML 2.5.1](https://www.omg.org/spec/UML/2.5.1/PDF).
 
-## Required Checks
+## Ordering and scope
 
-### 1. Use `shape: sequence_diagram`
+Predeclare participants in the intended left-to-right order, especially before
+using them inside groups. Within a sequence diagram, groups share the diagram's
+participant scope. Messages, notes, and groups appear in source order; preserve
+that order when revising the diagram.
 
-Do not fake a sequence diagram with ordinary nodes and arrows.
+Use groups to label meaningful phases, nested participant objects for activation
+spans, and unconnected nested objects for notes. These are optional tools, not a
+requirement to add more detail to every sequence.
+
+## Message meaning
+
+For UML-style messages, use a solid line and filled triangle for a synchronous
+call, a solid line and open arrow for an asynchronous message, and a dashed line
+and open arrow for a reply. Dashed lines alone do not mean asynchronous. For
+informal architecture sequences, a different stated convention is acceptable.
+
+D2 v0.9.0 does not provide the UML open stick arrow as a native arrowhead.
+Its `arrow` is a filled pointed polygon; `style.filled: false` does not change
+that shape. The example therefore uses `arrow` as an explicitly approximate
+notation for replies and events, with labels and line styles preserving meaning.
+If exact UML asynchronous/reply notation is required, use a tool supporting it
+or disclose the need for a separately validated export adjustment.
+
+The complete example below demonstrates participants, a group, spans, a note,
+a synchronous call, its reply, and an asynchronous event:
 
 ```d2
-Checkout flow: {
-  shape: sequence_diagram
+shape: sequence_diagram
+client: Client
+api: API
+payments: Payments
+worker: Worker
+
+client -> api.request: checkout {
+  target-arrowhead: {shape: triangle; style.filled: true}
 }
-```
-
-### 2. Predeclare actors in the intended left-to-right order
-
-Ordering matters. Declare participants explicitly before groups.
-
-### 3. Use groups for meaningful fragments
-
-Use them for: happy path, authorization flow, webhook reconciliation, failure/compensation branch, retry path.
-
-```d2
-authorize_payment: Authorize payment {
-  api -> payments: authorize
-  payments -> api: approved
+authorization: Authorize payment {
+  api.request -> payments.auth: authorize {
+    target-arrowhead: {shape: triangle; style.filled: true}
+  }
+  payments.auth -> api.request: approved {
+    style.stroke-dash: 5
+    target-arrowhead.shape: arrow
+  }
 }
-```
-
-### 4. Use spans for activation-like behavior
-
-When one actor is actively processing work over multiple messages, use nested objects:
-
-```d2
-api.request -> payments.auth: authorize
-payments.auth -> threeds.challenge: create challenge
-threeds.challenge -> payments.auth: challenge url
-payments.auth -> api.request: action required
-```
-
-### 5. Use notes for operational context
-
-Notes carry assumptions that do not belong in message labels:
-- idempotency key reuse
-- reservation TTL
-- webhook ordering caveats
-- timeout windows
-- retry semantics
-
-```d2
-checkout."Idempotency key is reused across retries for the same checkout attempt."
-```
-
-### 6. Respect definition order
-
-D2 sequence diagrams render in the order you define things.
-
-### 7. Distinguish synchronous vs asynchronous messages
-
-Style async messages distinctly:
-
-```d2
-payments.webhook -> api.reconcile: payment.authorized {
+api."Reuse the idempotency key when retrying the same checkout."
+api.request -> worker: payment authorized event {
+  target-arrowhead.shape: arrow
+}
+api.request -> client: accepted {
   style.stroke-dash: 5
+  target-arrowhead.shape: arrow
 }
 ```
 
-Good candidates: webhooks, event bus publications, background notifications, delayed callbacks.
+D2 groups do not enforce the full semantics of UML combined fragments. Label an
+alternative or loop explicitly when it is needed and state any notation limits.
+Include failure or compensation paths when they matter to the requested flow;
+do not invent an exception solely to satisfy a checklist.
 
-### 8. Prefer semantic clarity over message count
+## Review
 
-Make clear: who initiates the flow, what the authoritative services are, where decisions happen, which parts are async, where state is committed, how compensation/rollback works.
-
-### 9. Keep failure handling explicit
-
-Include at least one clearly labeled exception or compensation path:
-- payment authorization failure
-- persistence failure after successful authorization
-- stock release on compensation
-- void / refund after downstream failure
-
-### 10. Final review checklist
-
-- [ ] Is this truly a `sequence_diagram`, not a generic flow chart?
-- [ ] Are participants explicitly declared in the intended order?
-- [ ] Are major phases separated into groups?
-- [ ] Are spans used where activation-like behavior matters?
-- [ ] Are notes carrying operational assumptions?
-- [ ] Are async callbacks styled distinctly?
-- [ ] Is the failure / compensation path visible and readable?
+- Are participants, message order, and ownership supported by the source?
+- Are calls, replies, and events distinguishable and correctly labeled?
+- Do spans and notes communicate relevant work and assumptions?
+- If failure handling is in scope, does the diagram show the actual behavior?
+- Is the final export readable, including long labels and group boundaries?

@@ -2,22 +2,21 @@
 
 ## Table of Contents
 
-- [1. L1 System Landscape](#1-l1-system-landscape)
-- [2. L2 Architecture Overview](#2-l2-architecture-overview)
-- [3. L3 Deployment / Infrastructure](#3-l3-deployment--infrastructure)
-- [4. L2 Data Flow](#4-l2-data-flow)
-- [5. L2 Sequence Diagram](#5-l2-sequence-diagram)
-- [6. L3 Network / Security Topology](#6-l3-network--security-topology)
-- [7. L2 ER Diagram](#7-l2-er-diagram)
-- [8. L2 Decision Flowchart](#8-l2-decision-flowchart)
-- [9. State Machine](#9-state-machine)
-- [10. Org Chart](#10-org-chart)
-- [11. Class Diagram](#11-class-diagram)
-- [12. Roadmap / Timeline](#12-roadmap--timeline)
+- [L1 System Landscape](#l1-system-landscape)
+- [L2 Architecture Overview](#l2-architecture-overview)
+- [L2 Sequence Diagram](#l2-sequence-diagram)
+- [L2 ER Diagram](#l2-er-diagram)
+- [State Machine](#state-machine)
+- [Roadmap / Timeline](#roadmap--timeline)
+- [UML class diagram](#uml-class-diagram)
+
+Architecture examples below use dashed animated event edges as an informal
+convention. For UML-style sequence messages, use the dedicated
+[sequence reference](sequence-diagram-checklist.md).
 
 ---
 
-## 1. L1 System Landscape
+## L1 System Landscape
 
 Executive-level overview of a product ecosystem.
 
@@ -71,7 +70,7 @@ d2 --sketch --theme 200 --layout elk landscape.d2 landscape.svg
 
 ---
 
-## 2. L2 Architecture Overview
+## L2 Architecture Overview
 
 Default diagram type. One system + its integrations.
 
@@ -137,7 +136,7 @@ d2 --sketch --theme 200 --layout elk architecture.d2 architecture.svg
 
 ---
 
-## 5. L2 Sequence Diagram
+## L2 Sequence Diagram
 
 Temporal order of interactions for an authenticated data request.
 
@@ -158,18 +157,18 @@ core: UDL core API
 meta: Metadata store
 store: Object store
 
-client -> gateway: GET /data/{id} \nAuthorization: Bearer <token>
+client -> gateway: "GET /data/{id}\nAuthorization: Bearer token"
 gateway -> auth: validate token
 auth -> gateway: 200 OK -- claims
 gateway -> core: forward request + claims
 core -> meta: check ACL for resource
 meta -> core: permitted -- object key
-core -> store: GET s3://udl-raw/{key}
+core -> store: "GET s3://udl-raw/{key}"
 store -> core: 200 OK -- object bytes
 core -> gateway: 200 OK -- payload
 gateway -> client: 200 OK -- payload
 
-client -> gateway: GET /data/{bad-id}
+client -> gateway: "GET /data/{bad-id}"
 gateway -> auth: validate token
 auth -> gateway: 401 Unauthorized { style.stroke: "#E24B4A" }
 gateway -> client: 401 Unauthorized { style.stroke: "#E24B4A" }
@@ -181,7 +180,7 @@ d2 --sketch --theme 200 sequence.d2 sequence.svg
 
 ---
 
-## 7. L2 ER Diagram
+## L2 ER Diagram
 
 Database schema with sql_table shapes and ER cardinality notation.
 
@@ -247,7 +246,7 @@ d2 --sketch --theme 200 --layout elk er-diagram.d2 er-diagram.svg
 
 ---
 
-## 9. State Machine
+## State Machine
 
 Finite state machine showing an order lifecycle.
 
@@ -301,9 +300,11 @@ d2 --sketch --theme 200 --layout elk state-machine.d2 state-machine.svg
 
 ---
 
-## 12. Roadmap / Timeline
+## Roadmap / Timeline
 
-Product roadmap by quarter using grid layout.
+Product roadmap by quarter using grid layout. Cards show status, not dependency
+edges or a date-proportional scale. Shipped items are green, current work is
+outlined in blue, and planned items use dashed borders.
 
 ```d2
 # DIAGRAM TYPE: Roadmap / Timeline
@@ -312,7 +313,7 @@ direction: right
 vars: {
   d2-config: { sketch: true; theme-id: 200; layout-engine: elk }
   bg: "#1C2F4A"; surface: "#162646"; text: "#D6D6DA"; text-light: "#FFFFFF"
-  primary: "#385FAF"; muted: "#739BCF"; highlight: "#F5871F"
+  primary: "#385FAF"; muted: "#739BCF"; highlight: "#F5871F"; accent: "#9CADD7"
   success: "#4CAF80"
 }
 
@@ -321,21 +322,44 @@ classes: {
   shipped: { shape: step; style: { fill: "#1A3A2A"; stroke: ${success}; stroke-width: 1; font-color: ${success}; border-radius: 4 } }
   in-progress: { shape: step; style: { fill: ${bg}; stroke: ${accent}; stroke-width: 2; font-color: ${text}; border-radius: 4 } }
   planned: { shape: step; style: { fill: ${surface}; stroke: ${muted}; stroke-dash: 3; stroke-width: 1; font-color: ${muted}; border-radius: 4 } }
-  milestone: { shape: diamond; style: { fill: ${highlight}; stroke: "#c46a12"; stroke-width: 2; font-color: ${text-light}; bold: true } }
 }
 
-q1: Q1 { class: quarter; grid-rows: 3; grid-gap: 8; auth: Auth v2 { class: shipped }; search: Search revamp { class: shipped }; api_v1: Public API v1 { class: shipped } }
-q2: Q2 { class: quarter; grid-rows: 3; grid-gap: 8; billing: Billing integration { class: in-progress }; collab: Real-time collaboration { class: in-progress }; mobile: Mobile app beta { class: planned } }
-q3: Q3 { class: quarter; grid-rows: 3; grid-gap: 8; ai: AI assistant { class: planned }; analytics: Analytics dashboard { class: planned }; sso: Enterprise SSO { class: planned } }
-q4: Q4 { class: quarter; grid-rows: 3; grid-gap: 8; marketplace: Marketplace launch { class: planned }; api_v2: Public API v2 { class: planned }; i18n: Internationalization { class: planned } }
+roadmap: Quarterly plan {
+  grid-columns: 4
+  grid-gap: 24
+  q1: Q1 { class: quarter; grid-rows: 3; grid-gap: 8; auth: Auth v2 { class: shipped }; search: Search revamp { class: shipped }; api_v1: Public API v1 { class: shipped } }
+  q2: Q2 { class: quarter; grid-rows: 3; grid-gap: 8; billing: Billing integration { class: in-progress }; collab: Real-time collaboration { class: in-progress }; mobile: Mobile app beta { class: planned } }
+  q3: Q3 { class: quarter; grid-rows: 3; grid-gap: 8; ai: AI assistant { class: planned }; analytics: Analytics dashboard { class: planned }; sso: Enterprise SSO { class: planned } }
+  q4: Q4 { class: quarter; grid-rows: 3; grid-gap: 8; marketplace: Marketplace launch { class: planned }; api_v2: Public API v2 { class: planned }; i18n: Internationalization { class: planned } }
+}
 
-ga: "GA Launch" { class: milestone }
-q2.billing -> ga: enables { style.stroke: ${highlight}; style.stroke-width: 2 }
-q2.collab -> ga: enables { style.stroke: ${highlight}; style.stroke-width: 2 }
 ```
 
 ```bash
 d2 --sketch --theme 200 --layout elk roadmap.d2 roadmap.svg
 ```
 
-> Note: This file contains condensed key examples. Full examples with all 12 diagram types including L3 Deployment, L3 Network/Security, L2 Data Flow, L2 Decision Flowchart, Org Chart, and Class Diagram are in the original `Eryc123Y/d2-diagram-skill` repository at `skill/references/d2-examples.md`.
+## UML class diagram
+
+Use native class shapes and relationship markers rather than SQL tables.
+
+```d2
+direction: right
+User: {
+  shape: class
+  +id: UUID
+  +login(email, password): boolean
+}
+AdminUser: {
+  shape: class
+  +grantRole(role): void
+}
+AdminUser -> User: {
+  target-arrowhead.shape: triangle
+  target-arrowhead.style.filled: false
+}
+```
+
+```bash
+d2 --layout elk classes.d2 classes.svg
+```

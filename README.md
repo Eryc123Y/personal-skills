@@ -40,6 +40,8 @@ Research investigation uses `deep-research`, paper interpretation uses
 The three ARA skills were retired from active use on 2026-09-25. Project
 experiments and research documents own current decisions; historical ARA
 records remain readable where a project preserves them.
+`vibe-research-workflow` was removed on 2026-10-14; research planning uses
+`research-supervisor` and the current project evidence.
 
 ## Install via cc-switch
 
@@ -64,7 +66,6 @@ The name in `SKILL.md` is the user-facing invocation name.
 | `paper-analyzer` | `paper-analyzer` | Paper analysis scoped to the requested outcome |
 | `paper-comic` | `paper-comic` | Paper method illustrations |
 | `paper-deck` | `paper-deck` | Image-generated research presentations |
-| `vibe-research-workflow` | `vibe-research-workflow` | Research workflow planning and division of work |
 | `obsidian-second-brain` | `obsidian-second-brain` | Vault operations with explicit read/write scope |
 | `weekly-attendance-check-in` | `weekly-attendance-check-in` | Current-unit discovery and verified weekly attendance submission |
 

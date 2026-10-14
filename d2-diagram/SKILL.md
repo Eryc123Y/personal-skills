@@ -1,156 +1,85 @@
 ---
 name: d2-diagram
-description: "Generate production-quality D2 diagrams for system and process visualization. Use this skill whenever the user asks to diagram, draw, sketch, visualize, or map out system architecture, flowcharts, sequence diagrams, ER/database schemas, network topology, CI/CD pipelines, cloud infrastructure (AWS/GCP/Azure), Kubernetes, data flows, state machines, org charts, class diagrams, or roadmaps/timelines. Also activate when the user says 'show me how X connects to Y', 'make this visual', or 'create a diagram' for a structured system or workflow."
+description: Create and revise editable D2 diagrams for architecture, processes, sequences, UML classes, schemas, and infrastructure. Use when the user requests D2 or when a structured diagram benefits from D2 source and a rendered export. Respect an existing diagram format or an explicitly selected tool; general requests for charts, illustrations, or animation do not by themselves require D2.
 ---
 
-# D2 Diagram Skill
+# D2 diagrams
 
-## Design Philosophy
+Produce an editable `.d2` source and the requested rendered output. Follow the
+project's diagram conventions and the user's chosen format, scope, and style.
 
-1. **Semantic shapes first** — cylinders for databases, clouds for managed services, queues for message buses, hexagons for microservices, person for actors
-2. **Palette matches context** — dark/navy for engineering audiences; light/minimal for presentations and docs; infer from context or ask
-3. **Sketch by default** — hand-drawn aesthetic for exploratory and engineering diagrams; disable for formal print-ready output
-4. **ELK by default** — use `layout-engine: elk` for every diagram unless D2 forces `sequence_diagram` to use dagre internally
-5. **Typed connectors** — every edge communicates meaning (sync vs async, data-flow vs monitoring, boundary-crossing)
-6. **Classes for consistency** — define style classes once, apply everywhere; never repeat inline styles
-7. **Structure before connections** — declare all containers and nodes first, then draw all edges at the bottom
+## Choose the diagram
 
-## Diagram Type Selection
+| Need | D2 representation |
+|---|---|
+| Architecture, infrastructure, or process | Nodes, meaningful containers, labeled connections |
+| Time-ordered interactions | `shape: sequence_diagram` |
+| Database schema | `shape: sql_table` |
+| UML class diagram | `shape: class`; do not substitute a SQL table |
+| State machine | Named states and labeled transitions |
+| Roadmap | Grid containers and milestones; use a chart tool if scaled dates matter |
 
-| Type | D2 Approach | Key Config |
-| ---- | ----------- | ---------- |
-| **System Architecture** | Nested containers + typed edges | `direction: right`, ELK |
-| **Sequence Diagram** | `shape: sequence_diagram` | D2 falls back to dagre internally |
-| **ER / Schema** | `shape: sql_table` with constraints | `direction: right`, ELK |
-| **Flowchart / Decision** | `diamond` + `step` + `oval` shapes | `direction: down`, ELK |
-| **State Machine** | Nodes as states, labeled transition edges | `circle` for start/end terminals |
-| **Org Chart** | `person` shapes + containers | `direction: down`, ELK |
-| **Class Diagram** | `sql_table` approximation | Fields + methods as rows |
-| **CI/CD Pipeline** | `step` shapes + grid layout | `direction: right` |
-| **Data Flow / ETL** | Animated edges + pipeline-step class | `animated: true` |
-| **Cloud Infra** | Account/VPC/subnet containers, vendor icons | 5-level nesting |
-| **K8s Topology** | Cluster → namespace → deployment | `multiple: true` for replicas |
-| **Network / Security** | Trust zones + boundary-crossing edges | `security-boundary` class |
-| **Roadmap / Timeline** | `grid-rows` + `grid-columns` per quarter | `step` shapes per item |
+Read only the relevant reference:
 
-For complete renderable examples of every type, see `references/d2-examples.md`.
+- [Examples](references/d2-examples.md): complete architecture, sequence, schema,
+  state, roadmap, and class diagrams.
+- [Style guide](references/d2-style-guide.md): palettes, reusable classes,
+  layout choices, and compile-ready syntax examples.
+- [UML notation](references/uml-2.5.1-notation.md): relationship semantics and
+  arrowheads for UML work.
+- [Sequence checklist](references/sequence-diagram-checklist.md): participants,
+  groups, spans, message order, and synchronous/asynchronous notation.
 
-## Required Source Checks
+## Author and render
 
-Before generating diagrams where notation correctness matters, consult the bundled sources first:
-
-- **UML diagrams**: read `references/uml-2.5.1-notation.md` before generating class, object, package, component, or relationship-accurate diagrams.
-- **Sequence diagrams**: read `references/sequence-diagram-checklist.md` before generating or revising any non-trivial sequence diagram.
-
-## UML Mode
-
-When the user explicitly asks for UML, class diagrams, object diagrams, or relationship-accurate notation, switch into **strict UML mode**:
-
-- Follow UML 2.5.1 notation concepts.
-- Prefer D2's native UML support where available (`shape: class`).
-- Use correct relationship markers.
-
-Relationship rules:
-- **Association**: plain solid line
-- **Aggregation**: hollow diamond on the whole side
-- **Composition**: filled diamond on the whole side
-- **Generalization**: solid line with hollow triangle pointing to parent
-- **Realization**: dashed line with hollow triangle
-- **Dependency**: dashed line with open arrow
-
-See `references/uml-2.5.1-notation.md` for D2 patterns.
-
-## Sequence Diagram Mode
-
-Before drawing the final diagram, read `references/sequence-diagram-checklist.md`.
-
-- Predeclare actors at the top level to control ordering
-- Use groups for meaningful interaction fragments
-- Use spans when activation / in-flight work matters
-- Use notes for operational context
-- Preserve message order deliberately
-
-## Palette Options
-
-### Dark (engineering / technical audiences)
-
-```d2
-vars: {
-  d2-config: { sketch: true; theme-id: 200; layout-engine: elk }
-  bg:      "#1C2F4A"   surface:  "#162646"   text:      "#D6D6DA"
-  primary: "#385FAF"   accent:   "#9CADD7"   highlight: "#F5871F"
-  muted:   "#739BCF"   success:  "#4CAF80"   danger:    "#E24B4A"
-  text-light: "#FFFFFF"
-}
-```
-
-### Light (presentations / mixed audiences)
-
-```d2
-vars: {
-  d2-config: { sketch: true; theme-id: 0; layout-engine: elk }
-  bg:      "#FFFFFF"   surface:  "#F3F4F6"   text:      "#111827"
-  primary: "#2563EB"   accent:   "#7C3AED"   highlight: "#F59E0B"
-  muted:   "#6B7280"   success:  "#16A34A"   danger:    "#DC2626"
-  text-light: "#FFFFFF"
-}
-```
-
-For additional palettes, see `references/d2-style-guide.md` → Palette Options.
-
-## Core Template
-
-```d2
-# DIAGRAM TYPE: <Architecture | Sequence | ER | Flowchart | ...>
-# AUDIENCE: <who reads this>
-# Shows: <one sentence>
-
-direction: right
-
-vars: {
-  d2-config: {
-    sketch: true
-    theme-id: 200
-    layout-engine: elk
-  }
-  # palette vars here
-}
-
-classes: {
-  # See references/d2-style-guide.md > "Default Class Library"
-}
-
-# 1. Top-level standalone nodes (actors, external systems)
-# 2. Container hierarchy (outermost → innermost)
-# 3. All connections grouped by semantic type
-```
-
-## Render Commands
+1. Identify what the diagram must explain and which relationships the source
+   actually supports. Do not invent components or failure paths to fill a template.
+2. Check `d2 --version` and the installed layout engines with `d2 layout`.
+   Use ELK as a starting point for layered architecture; choose the layout that
+   works for the actual diagram. Sequence diagrams have their own ordering rules.
+3. Define important nodes and containers before connecting them. For sequences,
+   predeclare participants, then keep messages, notes, and groups in chronological
+   order; moving all messages to the bottom can change the meaning.
+4. Match the requested palette. Use sketch styling only when it suits the
+   deliverable. A small diagram does not need a palette or class framework.
+5. Reuse classes when helpful. D2 supports multiple classes with
+   `class: [service; highlighted]`. Use inline styles for genuine exceptions.
+6. Quote labels containing syntax characters, such as `"GET /data/{id}"`.
+   Separate same-line map entries with semicolons, and define variables before
+   referencing them. Use integer `stroke-width` values supported by D2 v0.9.0.
+7. For exact UML notation, check the reference's documented D2 limitations;
+   do not present approximated open arrowheads as standards-compliant output.
+8. Render and inspect the actual result. Check legibility, contrast, clipping,
+   arrowheads, container boundaries, and message order. A successful compilation
+   does not establish visual or semantic correctness.
 
 ```bash
-# Dark + sketch (default)
-d2 --sketch --theme 200 --layout elk input.d2 output.svg
+# Architecture starting point; preserve a project's existing layout choice.
+d2 --layout elk input.d2 output.svg
 
-# Light mode
-d2 --theme 0 --layout elk input.d2 output.svg
-
-# Watch mode
-d2 --layout elk -w input.d2 output.svg
+# Optional hand-drawn styling.
+d2 --sketch --layout elk input.d2 output.svg
 ```
 
-## Key Rules
+Use the host's available viewer or convert SVG to PNG for inspection. For a
+large diagram, inspect readable crops as well as the overall layout. Remote
+icons can fail to download; prefer available local assets or omit optional icons
+when they prevent a reproducible render. Do not imply an icon is incompatible
+with a shape without checking the actual output.
 
-- **Connections always last** — define structure first, then draw connections
-- **Default to ELK** — always pass `layout-engine: elk` or `--layout elk`
-- **`sequence_diagram` is the only exception** — D2 uses dagre internally for sequences
-- **Classes over inline styles** — never repeat fill/stroke/font-color on individual nodes
-- **One `class` per node** — D2 supports only one; use `class` for shape, `style` block for colors
-- **Integer `stroke-width` only** — D2 v0.7.x rejects decimal values
-- **Icons on rectangular shapes only** — hexagon, diamond, person, circle distort icons
+## Verify and deliver
 
-## References
+Return the source and the requested export, describing any unresolved rendering
+or notation limits. Do not start a watch server unless an interactive preview
+is useful for the task.
 
-- **`references/d2-style-guide.md`** — Complete D2 syntax: all style properties, shape catalog, palette options, icon library, ELK config, grid layouts, animation patterns.
-- **`references/d2-examples.md`** — Full renderable examples for every diagram type.
-- **`references/uml-2.5.1-notation.md`** — UML 2.5.1 relationship notation quick reference.
-- **`references/sequence-diagram-checklist.md`** — D2 sequence diagram checklist.
+When maintaining this skill, run the bundled example check:
+
+```bash
+python <skill-directory>/scripts/check_examples.py --output-dir <temporary-directory>
+```
+
+It compiles every D2 code block in this skill's Markdown files, preserving the
+resulting source and SVG files for inspection. Compilation checks do not replace
+visual review. Examples were checked with D2 v0.9.0; recheck the installed version
+before relying on a version-specific limitation.

@@ -19,7 +19,7 @@ Most relevant for: class diagrams, object diagrams, package diagrams, component 
 - Notation: solid line. Navigability: optional arrowhead.
 
 ```d2
-Order -> Customer
+Order -- Customer
 ```
 
 ### Aggregation
@@ -28,7 +28,7 @@ Order -> Customer
 - Notation: hollow diamond at the aggregate end.
 
 ```d2
-Team -> Player: has members {
+Team <- Player: has members {
   source-arrowhead.shape: diamond
   source-arrowhead.style.filled: false
 }
@@ -40,7 +40,7 @@ Team -> Player: has members {
 - Notation: filled diamond at the composite end.
 
 ```d2
-Order -> OrderLine: contains {
+Order <- OrderLine: contains {
   source-arrowhead.shape: diamond
   source-arrowhead.style.filled: true
 }
@@ -78,9 +78,17 @@ PaymentService -> PaymentProvider {
 
 ```d2
 ReportController -> PdfRenderer {
+  target-arrowhead.shape: arrow
   style.stroke-dash: 5
 }
 ```
+
+D2 v0.9.0 renders `arrow` as a filled pointed polygon, not the UML open
+stick arrow. The dependency example is an approximation; use a tool with exact
+UML notation if that distinction is required. Hollow triangles and diamonds
+in the preceding examples are supported directly. A source marker needs a
+source endpoint (`<-` or `<->`); setting `source-arrowhead` on `--` or `->`
+does not create one.
 
 ## Practical Guidance
 
@@ -97,7 +105,7 @@ User: {
   shape: class
   +id: UUID
   -passwordHash: string
-  +login(email: string, password: string): boolean
+  +login(email, password): boolean
 }
 ```
 

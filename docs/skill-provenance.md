@@ -33,13 +33,12 @@ and paper-craft resources are why those resources are not redistributed here.
 |---|---|---|
 | `context7-auto-research` | [BenedictKing/context7-auto-research](https://github.com/BenedictKing/context7-auto-research) | MIT; narrower trigger and host-aware tool routing; retained helper |
 | `python-best-practices` | [alleneubank/claude-code](https://github.com/alleneubank/claude-code) (formerly `0xbigboss/claude-code`) | Apache-2.0; condensed implementation/review guidance |
-| `vibe-research-workflow` | [HKUSTDial/Supervisor-Skills](https://github.com/HKUSTDial/Supervisor-Skills) | CC BY-NC-SA 4.0; scoped workflow selection, Codex-oriented tools, fewer unconditional steps |
 | `obsidian-second-brain` | [eugeniughelbur/obsidian-second-brain](https://github.com/eugeniughelbur/obsidian-second-brain) | MIT; scoped vault operations, adapted command entrypoints, reduced runtime dependencies |
 
 Each adapted folder includes its license and `SOURCE.md`, which identify the
-upstream and describe the local changes. The noncommercial/share-alike terms of
-`vibe-research-workflow` apply to that adaptation, not indiscriminately to the
-other independent folders. Do not remove these notices when packaging skills.
+upstream and describe the local changes. Preserve these notices when packaging
+skills. The `vibe-research-workflow` adaptation and its bundled references were
+removed on 2026-10-14; its historical source and license remain in Git history.
 
 ## Repository-to-client verification
 
