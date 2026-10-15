@@ -23,7 +23,7 @@ this repository is their versioned source.
 ### Video
 | Skill | Purpose |
 |---|---|
-| `manim-video` | Narrated, silent, and host-timed Manim CE animations with Chinese/LaTeX support and verified frames |
+| `manim-video` | Narrated, silent, and host-timed Manim CE or ManimGX animations with Chinese/LaTeX support and verified frames |
 
 ### Course Operations
 | Skill | Purpose |

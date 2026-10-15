@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Check the Manim toolchain. Run with the Python that will render.
 
-    python doctor.py            # exit 0 when every required check passes
+    python doctor.py              # Manim CE: exit 0 when every required check passes
+    python doctor.py --engine gx  # ManimGX (references/manimgx.md): package, GPU render, ffmpeg; no TeX
 """
 from __future__ import annotations
 
@@ -35,8 +36,36 @@ def run(cmd: list[str]) -> str:
         return ""
 
 
+def check_gx() -> bool:
+    """ManimGX renders on the GPU and brings Typst, mitex and fonts: one tiny frame proves the whole chain."""
+    if importlib.util.find_spec("manimgx") is None:
+        return check(f"manimgx importable in {sys.executable}", False,
+                     "uv pip install manimgx==0.1.1  (Python 3.13+, its own environment)")
+    from importlib.metadata import version as pkg_version
+    check(f"manimgx importable ({pkg_version('manimgx')}) in {sys.executable}", True)
+    try:
+        import manimgx as m
+
+        class Probe(m.Scene):
+            def construct(self) -> None:
+                self.add(m.MathTex(r"e^{i\pi}+1=0"), m.Text("中文", font="PingFang SC").shift(m.DOWN))
+
+        m.config.pixel_width, m.config.pixel_height = 320, 180
+        frames: list[bytes] = []
+        Probe().render(frames=lambda f: frames.append(f.pixels()))
+        rendered = bool(frames) and any(frames[-1][k] for k in range(0, len(frames[-1]), 4))
+    except Exception as exc:  # noqa: BLE001 - reported, not raised
+        return check("ManimGX GPU render", False, f"{type(exc).__name__}: {str(exc)[:120]}")
+    return check("ManimGX GPU render (formula and CJK text)", rendered, "no pixels drawn: check the GPU adapter")
+
+
 def main() -> int:
     ok = True
+    if "--engine" in sys.argv and sys.argv[sys.argv.index("--engine") + 1:][:1] == ["gx"]:
+        ok &= check_gx()
+        for name, hint in REQUIRED_BINS.items():
+            ok &= check(name, shutil.which(name) is not None, hint)
+        return 0 if ok else 1
     has_manim = importlib.util.find_spec("manim") is not None
     version = ""
     if has_manim:

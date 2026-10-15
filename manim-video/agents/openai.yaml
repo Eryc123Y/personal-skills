@@ -1,4 +1,4 @@
 interface:
   display_name: "Manim Video"
   short_description: "Manim animations with confirmed audio and timing needs"
-  default_prompt: "Use $manim-video to make a Manim CE animation. Clarify unresolved narration, existing-video integration, duration, and output requirements, then follow the appropriate workflow and verify the final render."
+  default_prompt: "Use $manim-video to make a Manim CE or ManimGX animation. Clarify unresolved narration, existing-video integration, duration, and output requirements, then follow the appropriate workflow and verify the final render."
