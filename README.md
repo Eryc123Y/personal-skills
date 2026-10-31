@@ -14,6 +14,7 @@ this repository is their versioned source.
 | Skill | Purpose |
 |---|---|
 | `d2-diagram` | Production-quality D2 diagrams — architecture, sequence, ER, flowcharts, and more |
+| `paper-figures` | Publication matplotlib data figures at true column width (bars, curves, heatmaps, multi-panel); adapted from figures4papers |
 
 ### Authoring
 | Skill | Purpose |

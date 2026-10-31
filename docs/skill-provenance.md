@@ -33,6 +33,7 @@ and paper-craft resources are why those resources are not redistributed here.
 |---|---|---|
 | `python-best-practices` | [alleneubank/claude-code](https://github.com/alleneubank/claude-code) (formerly `0xbigboss/claude-code`) | Apache-2.0; condensed implementation/review guidance |
 | `obsidian-second-brain` | [eugeniughelbur/obsidian-second-brain](https://github.com/eugeniughelbur/obsidian-second-brain) | MIT; scoped vault operations, adapted command entrypoints, reduced runtime dependencies |
+| `paper-figures` | [ChenLiu-1996/figures4papers](https://github.com/ChenLiu-1996/figures4papers) | CC BY-NC 4.0 (non-commercial); style notes and palette adapted; helper module, tests and examples written independently; print-size, font-embedding, zero-baseline and error-bar changes |
 
 Each adapted folder includes its license and `SOURCE.md`, which identify the
 upstream and describe the local changes. Preserve these notices when packaging
