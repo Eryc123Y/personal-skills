@@ -20,6 +20,11 @@ remakes them. --batch sends the chunks through the Batch API instead (half
 price, quota separate from the daily request cap, results within 24 h; the job
 is remembered in OUT/.batch.json, so re-running resumes it).
 
+--by-chapter breaks the chunks at chapter boundaries (ids like A0-03.2 belong to chapter A0), so the voice, which
+drifts a little from request to request, only changes on a chapter card; a chapter longer than CHUNK_SECONDS is
+divided evenly at slide boundaries. Every chunk's uncut audio is kept in OUT/.raw/ (index.json lists the lines of each
+file), so a bad cut can be redone from the recording instead of paying for the request again.
+
 Files are named NN_<id>.wav. Existing files are kept: a chunk is requested only
 when none of its lines exist yet; otherwise missing lines are made one by one
 (delete a file to redo that line).
@@ -329,6 +334,37 @@ def chunks(rows: list[tuple[int, str, str]]) -> list[list[tuple[int, str, str]]]
     return out + ([cur] if cur else [])
 
 
+def chapter_of(seg_id: str) -> str:
+    """Lines named like A0-03.2 belong to chapter A0."""
+    return seg_id.split("-", 1)[0]
+
+
+def chapter_chunks(rows: list[tuple[int, str, str]]) -> list[list[tuple[int, str, str]]]:
+    """One chunk per chapter, so the request-to-request drift of the voice falls on chapter cards; a chapter longer
+    than CHUNK_SECONDS is divided evenly at slide boundaries (chunks())."""
+    out, cur = [], []
+    for row in rows:
+        if cur and chapter_of(row[1]) != chapter_of(cur[-1][1]):
+            out += chunks(cur)
+            cur = []
+        cur.append(row)
+    return out + (chunks(cur) if cur else [])
+
+
+def keep_raw(out: Path, group, pcm: np.ndarray) -> Path:
+    """Keep a chunk's uncut audio as OUT/.raw/<first id>__<last id>.wav and note its lines in OUT/.raw/index.json:
+    a bad cut can then be redone from the recording without another request."""
+    raw = out / ".raw"
+    raw.mkdir(parents=True, exist_ok=True)
+    f = raw / f"{group[0][1]}__{group[-1][1]}.wav"
+    write_wav(f, pcm)
+    index_f = raw / "index.json"
+    index = json.loads(index_f.read_text()) if index_f.exists() else {}
+    index[f.name] = [seg_id for _, seg_id, _ in group]
+    index_f.write_text(json.dumps(index, ensure_ascii=False, indent=1))
+    return f
+
+
 def halves(group):
     """Split a chunk in two, at the slide boundary nearest its middle."""
     mid = len(group) // 2
@@ -396,6 +432,8 @@ def batch_run(key, groups, path, state_file: Path, wait_min: float) -> list[list
     for k, g in enumerate(state["chunks"]):
         r = by_key.get(f"chunk-{k}")
         pcm = audio_of(r) if r else None
+        if pcm is not None:
+            keep_raw(state_file.parent, g, pcm)
         pieces = split(pcm, [t for _, _, t in g]) if r else None
         if pieces is None:
             if pcm is not None:                          # kept for a look at why the pauses did not fit
@@ -418,6 +456,8 @@ def main() -> None:
     ap.add_argument("--per-line", action="store_true", help="one request per line")
     ap.add_argument("--batch", action="store_true", help="use the Batch API (half price, own quota, up to 24 h)")
     ap.add_argument("--wait", type=float, default=90, help="minutes to wait for a batch before exiting (default 90)")
+    ap.add_argument("--by-chapter", action="store_true",
+                    help="break the chunks at chapter boundaries (ids A0-03.2: chapter A0), not every CHUNK_SECONDS")
     ap.add_argument("--check", action="store_true", help="only measure the existing lines and flag outliers")
     ap.add_argument("--redo-outliers", action="store_true", help="delete flagged lines, then make them again")
     args = ap.parse_args()
@@ -451,11 +491,13 @@ def main() -> None:
             return
         pcm = synth(key, " <long pause> ".join(text for _, _, text in group))
         requests += 1
+        keep_raw(args.out, group, pcm)
         pieces = split(pcm, [text for _, _, text in group])
         if pieces is None and depth == 0:
             print(f"  {group[0][1]}…{group[-1][1]}: pauses unclear, asking once more", flush=True)
             pcm = synth(key, " <long pause> ".join(text for _, _, text in group))
             requests += 1
+            keep_raw(args.out, group, pcm)
             pieces = split(pcm, [text for _, _, text in group])
         if pieces is None:
             a, b = halves(group)
@@ -467,7 +509,7 @@ def main() -> None:
             write_wav(path(i, seg_id), piece)
         print(f"{group[0][1]}…{group[-1][1]}: {len(group)} lines from one request", flush=True)
 
-    groups = [[r] for r in rows] if args.per_line else chunks(rows)
+    groups = [[r] for r in rows] if args.per_line else (chapter_chunks(rows) if args.by_chapter else chunks(rows))
     if args.batch and not args.per_line:
         groups = batch_run(key, groups, path, args.out / ".batch.json", args.wait)
         if not groups and any(not path(i, s).exists() for i, s, _ in rows):
